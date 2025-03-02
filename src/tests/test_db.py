@@ -26,14 +26,13 @@ class TestDatabase:
         database.stop_test_session()
 
     def test_add_new_collaborator(self, collaborator):
-        with Session() as session:
+        with Session.begin() as session:
             session.add(collaborator)
-            session.commit()
             stmt = select(Collaborator).where(Collaborator.id == 1)
             assert session.scalars(stmt).one() == collaborator
 
     def test_add_new_client(self):
-        with Session() as session:
+        with Session.begin() as session:
             stmt = select(Collaborator).where(Collaborator.id == 1)
             collaborator = session.scalar(stmt)
 

@@ -44,7 +44,7 @@ class Database:
     def get_session(self) -> sessionmaker:
         return sessionmaker(self.engine)
 
-    def get_test_session(self):
+    def get_test_session(self) -> sessionmaker:
         print(f"\n ===== Testing database: {self.db_test} =====")
 
         db_exist = self._check_database_exist(self.db_test)
