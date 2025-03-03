@@ -56,6 +56,9 @@ class Contract(Base):
     date: Mapped[datetime.date] = mapped_column(Date)
     status: Mapped[bool] = mapped_column(Boolean)
 
+    def __str__(self):
+        return f"Contract {self.id}"
+
 
 class Event(Base):
     __tablename__ = "event"
@@ -69,3 +72,6 @@ class Event(Base):
     location: Mapped[str] = mapped_column(String(255))
     attendees: Mapped[int] = mapped_column(Integer)
     note: Mapped[str] = mapped_column(Text)
+
+    def __str__(self):
+        return f"Event {self.id}"

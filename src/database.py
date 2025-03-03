@@ -7,7 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 
-from models import Base
+from models import Base, Role
 
 
 class Database:
@@ -40,6 +40,20 @@ class Database:
                 print("Stay in the same database.")
         else:
             self._create_database(self.db_app)
+
+        # Add roles
+        roles = [
+            Role(role="gestion"),
+            Role(role="commecial"),
+            Role(role="support")
+        ]
+        try:
+            with self.get_session().begin() as session:
+                session.add_all(roles)
+        except Exception as e:
+            print("Error in database:")
+            print(e)
+            self._delete_database(self.db_app)
 
     def get_session(self) -> sessionmaker:
         return sessionmaker(self.engine)
