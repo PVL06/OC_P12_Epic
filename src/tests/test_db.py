@@ -3,8 +3,8 @@ import datetime
 import pytest
 from sqlalchemy import select
 
-from database import Database
-from models import Collaborator, Client, Contract, Event
+from core.database import Database
+from models.model import Collaborator, Client, Contract, Event
 
 database = Database()
 Session = database.get_test_session()
