@@ -3,10 +3,10 @@ import datetime
 import pytest
 from sqlalchemy import select
 
-from core.database import Database
+from core.db_manager import DBManager
 from models.model import Collaborator, Client, Contract, Event
 
-database = Database()
+database = DBManager()
 Session = database.get_test_session()
 
 

@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 from models.model import Base, Role
 
 
-class Database:
+class DBManager:
 
     def __init__(self):
         load_dotenv()
