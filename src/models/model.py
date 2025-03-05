@@ -17,7 +17,9 @@ class Collaborator(Base):
     email: Mapped[str] = mapped_column(String(255))
     phone: Mapped[str] = mapped_column(String(20))
     password: Mapped[str] = mapped_column(String(255))
+    role_id: Mapped[int] = mapped_column(ForeignKey("role.id"))
 
+    role: Mapped["Role"] = relationship(back_populates="roles")
     clients: Mapped[list["Client"]] = relationship(back_populates="commercial")
     contracts: Mapped["Contract"] = relationship(back_populates="commercial")
     supports: Mapped["Event"] = relationship(back_populates="support")
@@ -31,7 +33,8 @@ class Collaborator(Base):
             "complet_name": self.complet_name,
             "email": self.email,
             "phone": self.phone,
-            "password": self.password
+            "password": self.password,
+            "role": self.role.__str__()
         }
 
 
@@ -40,6 +43,11 @@ class Role(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     role: Mapped[str] = mapped_column(String(20), unique=True)
+
+    roles: Mapped["Collaborator"] = relationship(back_populates="role")
+
+    def __str__(self):
+        return self.role
 
 
 class Client(Base):
@@ -68,7 +76,7 @@ class Client(Base):
             "email": self.email,
             "phone": self.phone,
             "company": self.company,
-            "create_data": self.create_date,
+            "create_date": self.create_date,
             "update_date": self.update_date,
             "commercial": self.commercial.__str__()
         }
@@ -122,12 +130,15 @@ class Event(Base):
     def __str__(self):
         return self.id
 
-    def to_string(self):
+    def to_dict(self):
         return {
             "id": self.id,
-            "contract": self.contract_id,
+            "contract_id": self.contract_id,
             "client": self.client.__str__(),
             "event_start": self.event_start,
             "event_end": self.event_end,
-            "support": self.support.__str__()
+            "support": self.support.__str__(),
+            "location": self.location,
+            "attendees": self.attendees,
+            "note": self.note
         }

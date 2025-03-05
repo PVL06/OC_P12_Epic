@@ -80,7 +80,7 @@ class DBManager:
     def _add_roles(self, test=False) -> None:
         roles = [
             Role(role="gestion"),
-            Role(role="commecial"),
+            Role(role="commercial"),
             Role(role="support")
         ]
         Session = sessionmaker(self.engine_test if test else self.engine)

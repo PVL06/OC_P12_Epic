@@ -16,7 +16,8 @@ def collaborator():
         complet_name="John Collab",
         email="John@gmail.com",
         phone="0785056255",
-        password="mjkfdqmgmq"
+        password="mjkfdqmgmq",
+        role_id=1
     )
     return collaborator
 
