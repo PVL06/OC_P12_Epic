@@ -6,14 +6,16 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
+from argon2 import PasswordHasher
 
-from models.model import Base, Role
+from server.models import Base, Role, Collaborator
 
 
 class DBManager:
 
     def __init__(self):
         load_dotenv()
+        ph = PasswordHasher()
         self.db_app = os.getenv('DB_APP')
         self.db_test = os.getenv('DB_TEST')
         self.db_root = os.getenv('DB_ROOT')
@@ -25,6 +27,14 @@ class DBManager:
 
         self.engine = create_engine(f"postgresql+psycopg2://{os.getenv('DB_APP_URL')}")
         self.engine_test = create_engine(f"postgresql+psycopg2://{os.getenv('DB_TEST_URL')}")
+
+        self.first_user = {
+            "name": os.getenv('USER_NAME'),
+            "email": os.getenv('USER_EMAIL'),
+            "phone": os.getenv('USER_PHONE'),
+            "password": ph.hash(os.getenv('USER_PASSWORD')),
+            "role_id": 1
+        }
 
     def init_database(self) -> None:
         print(f"\n ===== Database: {self.db_app} =====")
@@ -74,19 +84,22 @@ class DBManager:
         if self._root_query(query):
             print(f"New database {db_name} created.")
             Base.metadata.create_all(self.engine_test if test else self.engine)
-            self._add_roles(test=test)
+            self._add_roles_and_first_user(test=test)
 
-    # add role values in database
-    def _add_roles(self, test=False) -> None:
+    # add role values and first user in database
+    def _add_roles_and_first_user(self, test=False) -> None:
         roles = [
             Role(role="gestion"),
             Role(role="commercial"),
             Role(role="support")
         ]
+        user = Collaborator(**self.first_user)
         Session = sessionmaker(self.engine_test if test else self.engine)
         try:
             with Session.begin() as session:
                 session.add_all(roles)
+                if not test:
+                    session.add(user)
         except Exception as e:
             print("Error in database:")
             print(e)

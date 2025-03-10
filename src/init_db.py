@@ -1,4 +1,4 @@
-from core.db_manager import DBManager
+from server.db_manager import DBManager
 
 db = DBManager()
 db.init_database()

@@ -13,7 +13,7 @@ class Collaborator(Base):
     __tablename__ = "collaborator"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    complet_name: Mapped[str] = mapped_column(String(50))
+    name: Mapped[str] = mapped_column(String(50))
     email: Mapped[str] = mapped_column(String(255))
     phone: Mapped[str] = mapped_column(String(20))
     password: Mapped[str] = mapped_column(String(255))
@@ -25,17 +25,7 @@ class Collaborator(Base):
     supports: Mapped["Event"] = relationship(back_populates="support")
 
     def __str__(self):
-        return self.complet_name
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "complet_name": self.complet_name,
-            "email": self.email,
-            "phone": self.phone,
-            "password": self.password,
-            "role": self.role.__str__()
-        }
+        return self.name
 
 
 class Role(Base):
@@ -54,7 +44,7 @@ class Client(Base):
     __tablename__ = "client"
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    client_name: Mapped[str] = mapped_column(String(50))
+    name: Mapped[str] = mapped_column(String(50))
     email: Mapped[str] = mapped_column(String(255))
     phone: Mapped[str] = mapped_column(String(20))
     company: Mapped[str] = mapped_column(String(255))
@@ -67,19 +57,7 @@ class Client(Base):
     events: Mapped["Event"] = relationship(back_populates="client")
 
     def __str__(self):
-        return self.client_name
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "client_name": self.client_name,
-            "email": self.email,
-            "phone": self.phone,
-            "company": self.company,
-            "create_date": self.create_date,
-            "update_date": self.update_date,
-            "commercial": self.commercial.__str__()
-        }
+        return self.name
 
 
 class Contract(Base):
@@ -98,17 +76,6 @@ class Contract(Base):
 
     def __str__(self):
         return self.id
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "client": self.client.__str__(),
-            "commercial": self.commercial.__str__(),
-            "total_cost": self.total_cost,
-            "remaining_to_pay": self.remaining_to_pay,
-            "date": self.date,
-            "status": self.status
-        }
 
 
 class Event(Base):
@@ -129,16 +96,3 @@ class Event(Base):
 
     def __str__(self):
         return self.id
-
-    def to_dict(self):
-        return {
-            "id": self.id,
-            "contract_id": self.contract_id,
-            "client": self.client.__str__(),
-            "event_start": self.event_start,
-            "event_end": self.event_end,
-            "support": self.support.__str__(),
-            "location": self.location,
-            "attendees": self.attendees,
-            "note": self.note
-        }

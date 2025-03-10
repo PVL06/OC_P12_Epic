@@ -11,3 +11,6 @@ wheels/
 
 # Dotenv
 .env
+
+# jwt token
+token
