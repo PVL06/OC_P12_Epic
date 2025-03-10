@@ -12,3 +12,11 @@ def handle_db_errors(func):
             print(e)
             return JSONResponse({"error": "Internal error"}, status_code=400)
     return wrapper
+
+
+def clean_data(class_name, data: dict, role: str) -> dict:
+    valid_attrs = class_name.get_valid_attrs(role=role)
+    for key in data.keys():
+        if key not in valid_attrs:
+            del data[key]
+    return data

@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import ForeignKey, String, DateTime, Date, Integer, Text, Float, Boolean
+from sqlalchemy import ForeignKey, String, DateTime, Date, Integer, Text, Float, Boolean, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
 
@@ -58,6 +58,16 @@ class Client(Base):
 
     def __str__(self):
         return self.name
+    
+    @classmethod
+    def get_valid_attrs(cls, role="") -> list[str]:
+        return [
+            "name",
+            "email",
+            "phone",
+            "company"
+        ]
+    # voir si commercial supprimer de reattribuer le client a un autre commercial
 
 
 class Contract(Base):
@@ -73,9 +83,30 @@ class Contract(Base):
 
     client: Mapped["Client"] = relationship(back_populates="contracts")
     commercial: Mapped["Collaborator"] = relationship(back_populates="contracts")
+    event: Mapped["Event"] = relationship(back_populates="contract")
 
     def __str__(self):
         return self.id
+
+    @classmethod
+    def get_valid_attrs(cls, role: str) -> list[str]:
+        if role == "support":
+            return [
+                "client_id",
+                "commercial_id",
+                "total_cost",
+                "remaining_to_pay",
+                "date",
+                "status"
+            ]
+        elif role == "commercial":
+            return [
+                "total_cost",
+                "remaining_to_pay",
+                "date",
+                "status"
+            ]
+        
 
 
 class Event(Base):
@@ -93,6 +124,33 @@ class Event(Base):
 
     client: Mapped["Client"] = relationship(back_populates="events")
     support: Mapped["Collaborator"] = relationship(back_populates="supports")
+    contract: Mapped["Contract"] = relationship(back_populates="event")
+
+    __table_args__ = (UniqueConstraint("contract_id"),)
 
     def __str__(self):
         return self.id
+
+    @classmethod
+    def get_valid_attrs(cls, role: str) -> list[str]:
+        if role == "gestion":
+            return [
+                "support_id"
+            ]
+        elif role == "support":
+            return [
+                "event_start",
+                "event_end",
+                "location",
+                "attendees",
+                "note"
+            ]
+        elif role == "commercial":
+            return [
+                "contract_id",
+                "event_start",
+                "event_end",
+                "location",
+                "attendees",
+                "note"
+            ]

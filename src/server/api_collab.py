@@ -18,7 +18,7 @@ manager = DBManager()
 class CollabAPI:
 
     @classmethod
-    def get_routes(cls):
+    def get_routes(cls) -> list[Route]:
         return [
             Route('/login', cls.login, methods=["POST"]),
             Route('/collab', cls.get_collaborators, methods=["GET"]),
@@ -65,9 +65,9 @@ class CollabAPI:
         new_session = manager.get_session()
         with new_session.begin() as session:
             data = session.scalars(stmt).all()
-            return_data = []
+            collaborators = []
             for collab in data:
-                return_data.append(
+                collaborators.append(
                     {
                         "id": collab.id,
                         "complet_name": collab.name,
@@ -76,7 +76,7 @@ class CollabAPI:
                         "role_id": collab.role.__str__()
                     }
                 )
-        return JSONResponse({'collaborators': return_data})
+        return JSONResponse({'collaborators': collaborators})
 
     @staticmethod
     @handle_db_errors
@@ -86,13 +86,8 @@ class CollabAPI:
         if user_role == "gestion":
             data = await request.json()
             ph = argon2.PasswordHasher()
-            new_collab = Collaborator(
-                name=data.get("name"),
-                email=data.get("email"),
-                phone=data.get("phone"),
-                password=ph.hash(data.get("password")),
-                role_id=data.get("role_id")
-            )
+            data["password"] = ph.hash(data["password"])
+            new_collab = Collaborator(**data)
             new_session = manager.get_session()
             with new_session.begin() as session:
                 session.add(new_collab)
@@ -102,7 +97,7 @@ class CollabAPI:
 
     @staticmethod
     @handle_db_errors
-    async def update_collaborator(request: Request):
+    async def update_collaborator(request: Request) -> JSONResponse:
         user_role = request.state.jwt_payload.get("role")
         if user_role == "gestion":
             data = await request.json()

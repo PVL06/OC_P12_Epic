@@ -3,18 +3,15 @@ from starlette.applications import Starlette
 from starlette.middleware import Middleware
 
 from server.api_collab import CollabAPI
-"""
-from server.api_client import ClientAPI, ContractAPI
-"""
+from server.api_work import ClientAPI, ContractAPI, EventAPI
 from server.middlewares import JWTMiddleware
 
 
 api_routes = [
     CollabAPI.get_routes(),
-    """
     ClientAPI.get_routes(),
-    ContractAPI.get_routes()
-    """
+    ContractAPI.get_routes(),
+    EventAPI.get_routes()
 ]
 
 
