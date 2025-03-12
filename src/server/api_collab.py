@@ -10,7 +10,7 @@ import jwt
 
 from server.db_manager import DBManager
 from server.models import Collaborator
-from server.db_decorator import handle_db_errors, clean_data, check_permission_and_data
+from server.utils import handle_db_errors, check_permission_and_data
 
 manager = DBManager()
 
@@ -55,7 +55,7 @@ class CollabAPI:
                         os.getenv("SECRET_KEY"),
                         algorithm="HS256"
                     )
-                    return JSONResponse({"jwt_token": token})
+                    return JSONResponse({"status": "Connected", "jwt_token": token})
             return JSONResponse({"error": "email invalid !"})
 
     @staticmethod
@@ -85,7 +85,7 @@ class CollabAPI:
         data = await request.json()
         cleaned_data = check_permission_and_data(Collaborator, data, user_role)
         if cleaned_data:
-            if cleaned_data.get("field_error"):
+            if cleaned_data.get("error"):
                 return JSONResponse(cleaned_data)
             else:
                 ph = argon2.PasswordHasher()
@@ -94,7 +94,7 @@ class CollabAPI:
                 new_session = manager.get_session()
                 with new_session.begin() as session:
                     session.add(new_collab)
-                return JSONResponse({'status': True})
+                return JSONResponse({"status": "New collaborator created"})
         else:
             return JSONResponse({"error": "Unauthorized"}, status_code=401)
 
@@ -105,7 +105,7 @@ class CollabAPI:
         data = await request.json()
         cleaned_data = check_permission_and_data(Collaborator, data, user_role)
         if cleaned_data:
-            if cleaned_data.get("field_error"):
+            if cleaned_data.get("error"):
                 return JSONResponse(cleaned_data)
             else:
                 stmt = select(Collaborator).where(Collaborator.id == request.path_params["id"])
@@ -115,8 +115,8 @@ class CollabAPI:
                     if collab:
                         for field, value in cleaned_data.items():
                             setattr(collab, field, value)
-                        return JSONResponse({"status": True})
-                    return JSONResponse({"status": False})
+                        return JSONResponse({"status": "Collaborator updated"})
+                    return JSONResponse({"error": "Invalid collaborator id"})
         else:
             return JSONResponse({"error": "Unauthorized"}, status_code=401)
 
@@ -132,7 +132,7 @@ class CollabAPI:
                 collab = session.scalar(stmt)
                 if collab:
                     session.delete(collab)
-                    return JSONResponse({"status": True})
-                return JSONResponse({"statut": False})
+                    return JSONResponse({"status": "Collaborator deleted"})
+                return JSONResponse({"error": "Invalid collaborator id"})
         else:
             return JSONResponse({"error": "Unauthorized"}, status_code=401)

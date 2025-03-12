@@ -16,13 +16,6 @@ def handle_db_errors(func):
     return wrapper
 
 
-def clean_data(class_name, data: dict, role: str) -> dict:
-    valid_attrs = class_name.get_valid_attrs(role=role)
-    for key in data.keys():
-        if key not in valid_attrs:
-            del data[key]
-    return data
-
 
 def check_permission_and_data(class_name, input_data: dict, role: str) -> dict | None:
     field_permissions = {
@@ -51,9 +44,9 @@ def check_permission_and_data(class_name, input_data: dict, role: str) -> dict |
                 if validated:
                     valid_data[field] = value
                 else:
-                    return {"field_error": f"Invalid value for field: {field}"}
+                    return {"error": f"Invalid value for field: {field}"}
             else:
-                return {"field_error": f"Invalid field: {field}"}
+                return {"error": f"Invalid field: {field}"}
         if valid_data:
             return valid_data
 
