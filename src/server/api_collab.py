@@ -10,7 +10,7 @@ import jwt
 
 from server.db_manager import DBManager
 from server.models import Collaborator
-from server.db_decorator import handle_db_errors
+from server.db_decorator import handle_db_errors, clean_data, check_permission_and_data
 
 manager = DBManager()
 
@@ -82,15 +82,18 @@ class CollabAPI:
     @handle_db_errors
     async def create_collaborator(request: Request) -> JSONResponse:
         user_role = request.state.jwt_payload.get("role")
-
-        if user_role == "gestion":
-            data = await request.json()
-            ph = argon2.PasswordHasher()
-            data["password"] = ph.hash(data["password"])
-            new_collab = Collaborator(**data)
-            new_session = manager.get_session()
-            with new_session.begin() as session:
-                session.add(new_collab)
+        data = await request.json()
+        cleaned_data = check_permission_and_data(Collaborator, data, user_role)
+        if cleaned_data:
+            if cleaned_data.get("field_error"):
+                return JSONResponse(cleaned_data)
+            else:
+                ph = argon2.PasswordHasher()
+                cleaned_data["password"] = ph.hash(cleaned_data["password"])
+                new_collab = Collaborator(**cleaned_data)
+                new_session = manager.get_session()
+                with new_session.begin() as session:
+                    session.add(new_collab)
                 return JSONResponse({'status': True})
         else:
             return JSONResponse({"error": "Unauthorized"}, status_code=401)
@@ -99,20 +102,21 @@ class CollabAPI:
     @handle_db_errors
     async def update_collaborator(request: Request) -> JSONResponse:
         user_role = request.state.jwt_payload.get("role")
-        if user_role == "gestion":
-            data = await request.json()
-            stmt = select(Collaborator).where(Collaborator.id == request.path_params["id"])
-            attrs = inspect(Collaborator).attrs.keys()
-
-            new_session = manager.get_session()
-            with new_session.begin() as session:
-                collab = session.scalar(stmt)
-                if collab:
-                    for field, value in data.items():
-                        if field in attrs:
+        data = await request.json()
+        cleaned_data = check_permission_and_data(Collaborator, data, user_role)
+        if cleaned_data:
+            if cleaned_data.get("field_error"):
+                return JSONResponse(cleaned_data)
+            else:
+                stmt = select(Collaborator).where(Collaborator.id == request.path_params["id"])
+                new_session = manager.get_session()
+                with new_session.begin() as session:
+                    collab = session.scalar(stmt)
+                    if collab:
+                        for field, value in cleaned_data.items():
                             setattr(collab, field, value)
-                    return JSONResponse({"status": True})
-                return JSONResponse({"status": False})
+                        return JSONResponse({"status": True})
+                    return JSONResponse({"status": False})
         else:
             return JSONResponse({"error": "Unauthorized"}, status_code=401)
 

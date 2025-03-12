@@ -26,6 +26,10 @@ class Collaborator(Base):
 
     def __str__(self):
         return self.name
+    
+    @classmethod
+    def get_valid_attrs(cls, role: str) -> list[str]:
+        return ["name", "email", "phone", "password", "role_id"]
 
 
 class Role(Base):
@@ -60,14 +64,9 @@ class Client(Base):
         return self.name
     
     @classmethod
-    def get_valid_attrs(cls, role="") -> list[str]:
-        return [
-            "name",
-            "email",
-            "phone",
-            "company"
-        ]
-    # voir si commercial supprimer de reattribuer le client a un autre commercial
+    def get_valid_attrs(cls, role: str) -> list[str]:
+        return ["name", "email", "phone", "company"]
+    # voir si commercial supprimé de reattribuer le client a un autre commercial (support)
 
 
 class Contract(Base):
@@ -90,22 +89,10 @@ class Contract(Base):
 
     @classmethod
     def get_valid_attrs(cls, role: str) -> list[str]:
-        if role == "support":
-            return [
-                "client_id",
-                "commercial_id",
-                "total_cost",
-                "remaining_to_pay",
-                "date",
-                "status"
-            ]
+        if role == "gestion":
+            return ["client_id", "commercial_id", "total_cost", "remaining_to_pay", "date", "status"]
         elif role == "commercial":
-            return [
-                "total_cost",
-                "remaining_to_pay",
-                "date",
-                "status"
-            ]
+            return ["total_cost", "remaining_to_pay", "date", "status"]
         
 
 
@@ -134,23 +121,8 @@ class Event(Base):
     @classmethod
     def get_valid_attrs(cls, role: str) -> list[str]:
         if role == "gestion":
-            return [
-                "support_id"
-            ]
+            return ["support_id"]
         elif role == "support":
-            return [
-                "event_start",
-                "event_end",
-                "location",
-                "attendees",
-                "note"
-            ]
+            return ["event_start", "event_end", "location", "attendees", "note"]
         elif role == "commercial":
-            return [
-                "contract_id",
-                "event_start",
-                "event_end",
-                "location",
-                "attendees",
-                "note"
-            ]
+            return ["contract_id", "event_start", "event_end", "location", "attendees", "note"]
