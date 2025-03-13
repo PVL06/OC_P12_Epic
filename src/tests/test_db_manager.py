@@ -3,8 +3,8 @@ import datetime
 import pytest
 from sqlalchemy import select
 
-from core.db_manager import DBManager
-from models.model import Collaborator, Client, Contract, Event
+from server.db_manager import DBManager
+from server.models import Collaborator, Client, Contract, Event
 
 database = DBManager()
 Session = database.get_test_session()
@@ -13,7 +13,7 @@ Session = database.get_test_session()
 @pytest.fixture
 def collaborator():
     collaborator = Collaborator(
-        complet_name="John Collab",
+        name="John Collab",
         email="John@gmail.com",
         phone="0785056255",
         password="mjkfdqmgmq",
@@ -40,7 +40,7 @@ class TestDatabase:
             collaborator = session.scalar(stmt)
 
             client = Client(
-                client_name="John Client",
+                name="John Client",
                 email="John@gmail.com",
                 phone="0785056255",
                 company="Client company",

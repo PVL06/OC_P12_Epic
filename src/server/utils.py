@@ -16,7 +16,6 @@ def handle_db_errors(func):
     return wrapper
 
 
-
 def check_permission_and_data(class_name, input_data: dict, role: str) -> dict | None:
     field_permissions = {
         "collaborator": {
@@ -31,7 +30,7 @@ def check_permission_and_data(class_name, input_data: dict, role: str) -> dict |
         },
         "event": {
             "gestion": ["support_id"],
-            "commercial": ["contract_id", "event_start", "event_end", "location", "attendees", "note"],
+            "commercial": ["support_id", "contract_id", "event_start", "event_end", "location", "attendees", "note"],
             "support": ["event_start", "event_end", "location", "attendees", "note"]
         }
     }
@@ -54,7 +53,7 @@ def check_permission_and_data(class_name, input_data: dict, role: str) -> dict |
 def validator(field: str, value) -> bool:
     if field in ["name", "company", "location", "note"]:
         return isinstance(value, str)
-    
+
     elif field[-3:] == "_id" or field in ["attendees", "total_cost", "remaining_to_pay"]:
         if isinstance(value, int):
             if value > 0:
@@ -65,7 +64,7 @@ def validator(field: str, value) -> bool:
         if isinstance(value, str):
             pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
             return re.match(pattern, value) is not None
-        
+
     elif field == "phone":
         if isinstance(value, str):
             return value.isdigit()
@@ -73,13 +72,13 @@ def validator(field: str, value) -> bool:
     elif field == "password":
         if isinstance(value, str):
             return len(value) > 3
-        
+
     elif field in ["date", "event_start", "event_end"]:
         pattern = r'^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$'
         return re.match(pattern, value)
-    
+
     elif field == "status":
         return isinstance(value, bool)
-    
+
     else:
         return False

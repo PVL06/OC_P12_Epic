@@ -1,7 +1,7 @@
 import os
 import datetime
 
-from sqlalchemy import select, inspect
+from sqlalchemy import select
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 from starlette.requests import Request

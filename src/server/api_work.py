@@ -1,4 +1,4 @@
-from sqlalchemy import select, inspect
+from sqlalchemy import select
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 from starlette.requests import Request
@@ -157,7 +157,7 @@ class ContractAPI:
 
         if cleaned_data:
             if cleaned_data.get("error"):
-                    return JSONResponse(cleaned_data)
+                return JSONResponse(cleaned_data)
 
             stmt = select(Contract).where(Contract.id == request.path_params["id"])
             new_session = manager.get_session()
