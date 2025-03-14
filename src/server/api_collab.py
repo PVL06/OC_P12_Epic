@@ -32,7 +32,6 @@ class CollabAPI:
     async def login(request: Request) -> JSONResponse:
         data = await request.json()
         stmt = select(Collaborator).where(Collaborator.email == data.get("email"))
-
         new_session = manager.get_session()
         with new_session.begin() as session:
             collab = session.scalar(stmt)

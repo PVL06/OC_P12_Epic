@@ -16,7 +16,7 @@ def handle_db_errors(func):
     return wrapper
 
 
-def check_permission_and_data(class_name, input_data: dict, role: str) -> dict | None:
+def check_permission_and_data(class_model, input_data: dict, role: str) -> dict | None:
     field_permissions = {
         "collaborator": {
             "gestion": ["name", "email", "phone", "password", "role_id"]
@@ -34,7 +34,7 @@ def check_permission_and_data(class_name, input_data: dict, role: str) -> dict |
             "support": ["event_start", "event_end", "location", "attendees", "note"]
         }
     }
-    valid_fields = field_permissions[class_name.__tablename__].get(role)
+    valid_fields = field_permissions[class_model.__tablename__].get(role)
     if valid_fields:
         valid_data = {}
         for field, value in input_data.items():
