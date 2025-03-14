@@ -51,22 +51,22 @@ class DBManager:
         else:
             self._create_database(self.db_app)
 
+    def init_test_database(self) -> None:
+        db_exist = self._check_database_exist(self.db_test)
+        if db_exist:
+            self._delete_database(self.db_test)
+        self._create_database(self.db_test, test=True)
+
+    def stop_test_db(self) -> None:
+        self.engine_test.dispose()
+        self.engine.dispose()
+        self._delete_database(self.db_test)
+
     def get_session(self) -> sessionmaker:
         return sessionmaker(self.engine)
 
     def get_test_session(self) -> sessionmaker:
-        print(f"\n ===== Testing database: {self.db_test} =====")
-
-        db_exist = self._check_database_exist(self.db_test)
-        if db_exist:
-            self._delete_database(self.db_test)
-
-        self._create_database(self.db_test, test=True)
         return sessionmaker(self.engine_test)
-
-    def stop_test_session(self) -> None:
-        self.engine_test.dispose()
-        self._delete_database(self.db_test)
 
     # Try to connect to the database and check if database exist
     def _check_database_exist(self, db_name: str) -> bool:
@@ -80,6 +80,7 @@ class DBManager:
 
     # Create new database
     def _create_database(self, db_name: str, test=False) -> None:
+        print(f"\n ===== Create database: {db_name} =====")
         query = f"CREATE DATABASE {db_name}"
         if self._root_query(query):
             print(f"New database {db_name} created.")
@@ -98,8 +99,7 @@ class DBManager:
         try:
             with Session.begin() as session:
                 session.add_all(roles)
-                if not test:
-                    session.add(user)
+                session.add(user)
         except Exception as e:
             print("Error in database:")
             print(e)
@@ -107,6 +107,7 @@ class DBManager:
 
     # Delete database
     def _delete_database(self, db_name: str) -> None:
+        print(f"\n ===== Deleted database {db_name} =====")
         query = f"DROP DATABASE {db_name}"
         if self._root_query(query):
             print(f"Old database {db_name} deleted.")

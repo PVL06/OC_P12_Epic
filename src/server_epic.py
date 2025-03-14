@@ -1,10 +1,9 @@
 import uvicorn
 from starlette.applications import Starlette
-from starlette.middleware import Middleware
 
 from server.api_collab import CollabAPI
 from server.api_work import ClientAPI, ContractAPI, EventAPI
-from server.middlewares import JWTMiddleware
+from server.middlewares import JWTMiddleware, DatabaseMiddleware
 
 
 api_routes = [
@@ -19,15 +18,13 @@ all_routes = []
 for routes in api_routes:
     all_routes.extend(routes)
 
-middlewares = [
-    Middleware(JWTMiddleware)
-]
-
 app = Starlette(
     debug=True,
-    routes=all_routes,
-    middleware=middlewares
+    routes=all_routes
 )
+
+app.add_middleware(JWTMiddleware)
+app.add_middleware(DatabaseMiddleware)
 
 
 if __name__ == "__main__":

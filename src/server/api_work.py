@@ -24,9 +24,7 @@ class ClientAPI:
     @handle_db_errors
     async def get_clients(request: Request) -> JSONResponse:
         stmt = select(Client)
-
-        new_session = manager.get_session()
-        with new_session.begin() as session:
+        with request.state.db.begin() as session:
             data = session.scalars(stmt).all()
             clients = []
             for client in data:
@@ -53,15 +51,15 @@ class ClientAPI:
         data = await request.json()
         cleaned_data = check_permission_and_data(Client, data, user.get("role"))
         if cleaned_data:
+
             if cleaned_data.get("error"):
                 return JSONResponse(cleaned_data)
-            else:
-                cleaned_data["commercial_id"] = user.get("id")
-                new_client = Client(**cleaned_data)
-                new_session = manager.get_session()
-                with new_session.begin() as session:
-                    session.add(new_client)
-                    return JSONResponse({"status": "Client created"})
+
+            cleaned_data["commercial_id"] = user.get("id")
+            new_client = Client(**cleaned_data)
+            with request.state.db.begin() as session:
+                session.add(new_client)
+                return JSONResponse({"status": "Client created"})
         else:
             return JSONResponse({"error": "Unauthorized"}, status_code=401)
 
@@ -71,22 +69,20 @@ class ClientAPI:
         user = request.state.jwt_payload
         data = await request.json()
         cleaned_data = check_permission_and_data(Client, data, user.get("role"))
-
         if cleaned_data:
+
             if cleaned_data.get("error"):
                 return JSONResponse(cleaned_data)
-            else:
-                stmt = select(Client).where(Client.id == request.path_params["id"])
 
-                new_session = manager.get_session()
-                with new_session.begin() as session:
-                    client = session.scalar(stmt)
-                    if client.commercial_id == user.get("id"):
-                        for field, value in cleaned_data.items():
-                            setattr(client, field, value)
-                        return JSONResponse({"status": "Client updated"})
-                    else:
-                        return JSONResponse({"error": "Not your client"}, status_code=401)
+            stmt = select(Client).where(Client.id == request.path_params["id"])
+            with request.state.db.begin() as session:
+                client = session.scalar(stmt)
+                if client.commercial_id == user.get("id"):
+                    for field, value in cleaned_data.items():
+                        setattr(client, field, value)
+                    return JSONResponse({"status": "Client updated"})
+                else:
+                    return JSONResponse({"error": "Not your client"}, status_code=401)
         else:
             return JSONResponse({"error": "Unauthorized"}, status_code=401)
 
@@ -104,9 +100,7 @@ class ContractAPI:
     @handle_db_errors
     async def get_contracts(request: Request) -> JSONResponse:
         stmt = select(Contract)
-
-        new_session = manager.get_session()
-        with new_session.begin() as session:
+        with request.state.db.begin() as session:
             data = session.scalars(stmt).all()
             contracts = []
             for contract in data:
@@ -135,8 +129,7 @@ class ContractAPI:
                 return JSONResponse(cleaned_data)
 
             stmt = select(Client).where(Client.id == cleaned_data.get("client_id"))
-            new_session = manager.get_session()
-            with new_session.begin() as session:
+            with request.state.db.begin() as session:
                 client = session.scalar(stmt)
                 if client:
                     cleaned_data["commercial_id"] = client.commercial_id
@@ -154,14 +147,13 @@ class ContractAPI:
         user = request.state.jwt_payload
         data = await request.json()
         cleaned_data = check_permission_and_data(Contract, data, user.get("role"))
-
         if cleaned_data:
+
             if cleaned_data.get("error"):
                 return JSONResponse(cleaned_data)
 
             stmt = select(Contract).where(Contract.id == request.path_params["id"])
-            new_session = manager.get_session()
-            with new_session.begin() as session:
+            with request.state.db.begin() as session:
                 contract = session.scalar(stmt)
                 if contract:
                     if user.get("role") == "commercial" and contract.commercial_id != user.get("id"):
@@ -188,9 +180,7 @@ class EventAPI:
     @handle_db_errors
     async def get_events(request: Request) -> JSONResponse:
         stmt = select(Event)
-
-        new_session = manager.get_session()
-        with new_session.begin() as session:
+        with request.state.db.begin() as session:
             data = session.scalars(stmt).all()
             events = []
             for event in data:
@@ -222,8 +212,7 @@ class EventAPI:
                 return JSONResponse(cleaned_data)
 
             stmt = select(Contract).where(Contract.id == data.get("contract_id"))
-            new_session = manager.get_session()
-            with new_session.begin() as session:
+            with request.state.db.begin() as session:
                 contract = session.scalar(stmt)
                 if contract:
                     if contract.commercial_id == user.get("id"):
@@ -251,8 +240,7 @@ class EventAPI:
                 return JSONResponse(cleaned_data)
 
             stmt = select(Event).where(Event.id == request.path_params["id"])
-            new_session = manager.get_session()
-            with new_session.begin() as session:
+            with request.state.db.begin() as session:
                 event = session.scalar(stmt)
                 if event:
                     for field, value in cleaned_data.items():

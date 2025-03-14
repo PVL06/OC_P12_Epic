@@ -6,8 +6,7 @@ from sqlalchemy import select
 from server.db_manager import DBManager
 from server.models import Collaborator, Client, Contract, Event
 
-database = DBManager()
-Session = database.get_test_session()
+manager = DBManager()
 
 
 @pytest.fixture
@@ -25,18 +24,22 @@ def collaborator():
 class TestDatabase:
 
     @classmethod
+    def setup_class(cls):
+        manager.init_test_database()
+
+    @classmethod
     def teardown_class(cls):
-        database.stop_test_session()
+        manager.stop_test_db()
 
     def test_add_new_collaborator(self, collaborator):
-        with Session.begin() as session:
+        with manager.get_test_session().begin() as session:
             session.add(collaborator)
-            stmt = select(Collaborator).where(Collaborator.id == 1)
+            stmt = select(Collaborator).where(Collaborator.id == 2)
             assert session.scalar(stmt) == collaborator
 
     def test_add_new_client(self):
-        with Session.begin() as session:
-            stmt = select(Collaborator).where(Collaborator.id == 1)
+        with manager.get_test_session().begin() as session:
+            stmt = select(Collaborator).where(Collaborator.id == 2)
             collaborator = session.scalar(stmt)
 
             client = Client(
@@ -51,8 +54,8 @@ class TestDatabase:
             assert session.scalar(stmt) == client
 
     def test_add_new_contract(self):
-        with Session.begin() as session:
-            stmt = select(Collaborator).where(Collaborator.id == 1)
+        with manager.get_test_session().begin() as session:
+            stmt = select(Collaborator).where(Collaborator.id == 2)
             collaborator = session.scalar(stmt)
             stmt = select(Client).where(Client.id == 1)
             client = session.scalar(stmt)
@@ -69,12 +72,12 @@ class TestDatabase:
             assert session.scalar(stmt) == contract
 
     def test_add_new_event(self):
-        with Session.begin() as session:
+        with manager.get_test_session().begin() as session:
             stmt = select(Contract).where(Contract.id == 1)
             contract = session.scalar(stmt)
             stmt = select(Client).where(Client.id == 1)
             client = session.scalar(stmt)
-            stmt = select(Collaborator).where(Collaborator.id == 1)
+            stmt = select(Collaborator).where(Collaborator.id == 2)
             support = session.scalar(stmt)
 
             event = Event(
