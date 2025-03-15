@@ -5,7 +5,7 @@ from starlette.requests import Request
 
 from server.db_manager import DBManager
 from server.models import Client, Contract, Event
-from server.utils import handle_db_errors, check_permission_and_data
+from server.permissions import handle_db_errors, check_permission_and_data
 
 
 manager = DBManager()

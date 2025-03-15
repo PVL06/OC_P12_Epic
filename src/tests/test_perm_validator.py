@@ -1,6 +1,6 @@
 import pytest
 
-from server.utils import check_permission_and_data
+from server.permissions import check_permission_and_data
 
 
 class Contract:
