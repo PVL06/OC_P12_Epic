@@ -40,6 +40,7 @@ def client():
     yield client
     client.close()
 
+
 @pytest.fixture
 def gestion_user():
     return {
@@ -59,7 +60,53 @@ def commercial_user():
     }
 
 
+@pytest.fixture
+def support_user():
+    return {
+        "name": "support 1",
+        "email": "support1@gmail.com",
+        "phone": "12345678",
+        "password": "1234",
+        "role_id": 3
+    }
+
+
+@pytest.fixture
+def client_data():
+    return {
+        "name": "client 1",
+        "email": "client1@gmail.com",
+        "phone": "4546546",
+        "company": "client1 company"
+    }
+
+
+@pytest.fixture
+def contract_data():
+    return {
+        "client_id": 1,
+        "total_cost": 2000,
+        "remaining_to_pay": 500,
+        "date": "02/01/2025",
+        "status": False
+    }
+
+
+@pytest.fixture
+def event_data():
+    return {
+        "contract_id": 1,
+        "event_start": "25/01/2026",
+        "event_end": "30/01/2026",
+        "support_id": 1,
+        "location": "chateau du baron",
+        "attendees": 200,
+        "note": "lorem ipsum"
+    }
+
+
 class TestApi:
+
     @classmethod
     def setup_class(cls):
         manager.init_test_database()
@@ -80,7 +127,7 @@ class TestApi:
         }
         return header
 
-    # Tests for collaborator login
+    # _____Tests for collaborator login_____
 
     def test_login_with_valid_credential(self, client, gestion_user):
         url = base_url + "/login"
@@ -110,7 +157,7 @@ class TestApi:
         assert res.status_code == 200
         assert res.json() == {"error": "Invalid password !"}
 
-    # Tests for get collaborators and authorization with jwt token header
+    # _____Tests for get collaborators and authorization with jwt token header_____
 
     def test_get_collaborator_with_valid_token(self, client, gestion_user):
         url = base_url + "/collab"
@@ -130,13 +177,16 @@ class TestApi:
     def test_get_collaborator_with_invalid_jwt_token(self, client):
         url = base_url + "/collab"
         header = {
-            "Authorization": "Bearer " + "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0.KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30"
+            "Authorization": "Bearer " + (
+                "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9."
+                "eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImlhdCI6MTUxNjIzOTAyMn0."
+                "KMUFsIDTnFmyG3nMiGM6H9FNFUROf3wh7SmqJp-QV30")
         }
         res = client.get(url, headers=header)
         assert res.status_code == 401
         assert res.json() == {"error": "Invalid token"}
 
-    # Tests for create collaborator and for role permissions
+    # _____Tests for create collaborator and for role permissions_____
 
     def test_create_new_collab_with_valid_role(self, client, gestion_user, commercial_user):
         url = base_url + "/collab/create"
@@ -159,7 +209,7 @@ class TestApi:
         assert res.status_code == 401
         assert res.json() == {"error": "Unauthorized"}
 
-    # Tests for update collaborator and for fields type validator and fields permission
+    # _____Tests for update collaborator and for fields type validator and fields permission_____
 
     def test_update_collaborator_with_valid_fields_and_value(self, client, gestion_user):
         url = base_url + "/collab/update/1"
@@ -193,7 +243,7 @@ class TestApi:
         assert res.status_code == 200
         assert res.json() == {"error": "Invalid value for field: phone"}
 
-    # tests for delete collaborator and check invalid id in url
+    # _____Tests for delete collaborator and check invalid id in url_____
 
     def test_delete_collaborator_with_invalid_url_id(self, client, gestion_user):
         url = base_url + "/collab/delete/3"
@@ -212,3 +262,101 @@ class TestApi:
         )
         assert res.status_code == 200
         assert res.json() == {"status": "Collaborator deleted"}
+
+    # _____Test for client_____
+
+    def test_create_new_client(self, client, gestion_user, commercial_user, client_data):
+        # recreate commercial collaborator
+        self.test_create_new_collab_with_valid_role(client, gestion_user, commercial_user)
+
+        url = base_url + "/client/create"
+        res = client.post(
+            url,
+            json=client_data,
+            headers=self._header_with_auth(client, commercial_user)
+        )
+        assert res.status_code == 200
+        assert res.json() == {"status": "Client created"}
+
+    def test_get_client(self, client, commercial_user):
+        url = base_url + "/client"
+        res = client.get(
+            url,
+            headers=self._header_with_auth(client, commercial_user)
+            )
+        assert res.status_code == 200
+        assert len(res.json().get("clients")) == 1
+
+    def test_update_client(self, client, commercial_user):
+        url = base_url + "/client/update/1"
+        res = client.post(
+            url,
+            json={"company": "new name company"},
+            headers=self._header_with_auth(client, commercial_user)
+        )
+        assert res.status_code == 200
+        assert res.json() == {"status": "Client updated"}
+
+    # _____Test for contract_____
+
+    def test_create_new_contract(self, client, gestion_user, contract_data):
+        url = base_url + "/contract/create"
+        res = client.post(
+            url,
+            json=contract_data,
+            headers=self._header_with_auth(client, gestion_user)
+        )
+        assert res.status_code == 200
+        assert res.json() == {"status": "contract created"}
+
+    def test_get_contract(self, client, commercial_user):
+        url = base_url + "/contract"
+        res = client.get(
+            url,
+            headers=self._header_with_auth(client, commercial_user)
+            )
+        assert res.status_code == 200
+        assert len(res.json().get("contracts")) == 1
+
+    def test_update_contract(self, client, commercial_user):
+        url = base_url + "/contract/update/1"
+        res = client.post(
+            url,
+            json={"status": True},
+            headers=self._header_with_auth(client, commercial_user)
+        )
+        assert res.status_code == 200
+        assert res.json() == {"status": "Contract updated"}
+
+    # _____Test for event_____
+
+    def test_create_new_event(self, client, commercial_user, event_data):
+        url = base_url + "/event/create"
+        res = client.post(
+            url,
+            json=event_data,
+            headers=self._header_with_auth(client, commercial_user)
+        )
+        assert res.status_code == 200
+        assert res.json() == {"status": "Event created"}
+
+    def test_get_event(self, client, commercial_user):
+        url = base_url + "/event"
+        res = client.get(
+            url,
+            headers=self._header_with_auth(client, commercial_user)
+            )
+        assert res.status_code == 200
+        assert len(res.json().get("events")) == 1
+
+    def test_update_event(self, client, gestion_user, support_user):
+        # create support user
+        self.test_create_new_collab_with_valid_role(client, gestion_user, support_user)
+        url = base_url + "/event/update/1"
+        res = client.post(
+            url,
+            json={"attendees": 1000},
+            headers=self._header_with_auth(client, support_user)
+        )
+        assert res.status_code == 200
+        assert res.json() == {"status": "Event updated"}

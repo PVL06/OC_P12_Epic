@@ -1,7 +1,6 @@
 import os
 
 import psycopg2
-from psycopg2 import sql
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -59,7 +58,6 @@ class DBManager:
 
     def stop_test_db(self) -> None:
         self.engine_test.dispose()
-        self.engine.dispose()
         self._delete_database(self.db_test)
 
     def get_session(self) -> sessionmaker:
@@ -83,9 +81,9 @@ class DBManager:
         print(f"\n ===== Create database: {db_name} =====")
         query = f"CREATE DATABASE {db_name}"
         if self._root_query(query):
-            print(f"New database {db_name} created.")
             Base.metadata.create_all(self.engine_test if test else self.engine)
             self._add_roles_and_first_user(test=test)
+            print(f"New database {db_name} created.")
 
     # add role values and first user in database
     def _add_roles_and_first_user(self, test=False) -> None:
@@ -101,7 +99,6 @@ class DBManager:
                 session.add_all(roles)
                 session.add(user)
         except Exception as e:
-            print("Error in database:")
             print(e)
             self._delete_database(self.db_app)
 
@@ -118,7 +115,16 @@ class DBManager:
             conn = psycopg2.connect(dbname=self.db_root, **self.credentials)
             conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             cursor = conn.cursor()
-            cursor.execute(sql.SQL(query))
+            cursor.execute(
+                """
+                SELECT pg_terminate_backend(pg_stat_activity.pid)
+                FROM pg_stat_activity
+                WHERE pg_stat_activity.datname = %s
+                AND pid <> pg_backend_pid();
+                """,
+                (self.db_test,)
+            )
+            cursor.execute(query)
             cursor.close()
             conn.close()
             return True
