@@ -53,7 +53,12 @@ class CollabAPI:
                         os.getenv("SECRET_KEY"),
                         algorithm="HS256"
                     )
-                    return JSONResponse({"status": "Connected", "jwt_token": token})
+                    return JSONResponse(
+                        {
+                            "status": "Connected",
+                            "jwt_token": "Bearer " + token
+                        }
+                    )
             return JSONResponse({"error": "email invalid !"})
 
     @staticmethod
