@@ -21,6 +21,7 @@ class CollabAPI:
     def get_routes(cls) -> list[Route]:
         return [
             Route('/login', cls.login, methods=["POST"]),
+            Route('/session', cls.session, methods=["GET"]),
             Route('/collab', cls.get_collaborators, methods=["GET"]),
             Route('/collab/create', cls.create_collaborator, methods=["POST"]),
             Route('/collab/update/{id}', cls.update_collaborator, methods=["POST"]),
@@ -60,6 +61,17 @@ class CollabAPI:
                         }
                     )
             return JSONResponse({"error": "email invalid !"})
+
+    @staticmethod
+    @handle_db_errors
+    async def session(request: Request) -> JSONResponse:
+        payload = request.state.jwt_payload
+        return JSONResponse(
+            {
+                "id": payload.get("id"),
+                "role": payload.get("role")
+            }
+        )
 
     @staticmethod
     @handle_db_errors

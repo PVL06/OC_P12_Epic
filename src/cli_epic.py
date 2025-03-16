@@ -36,7 +36,12 @@ def collab(create, update, delete):
         collaborator.get_list()
 
     elif options_selected == 1:
-        pass
+        if create:
+            collaborator.create_collab()
+        elif update:
+            collaborator.update_collab()
+        elif delete:
+            collaborator.delete_collab()
     else:
         console.print("Multiple options not allowed", style="red")
 
