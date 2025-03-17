@@ -41,7 +41,7 @@ class CollabAPI:
                     ph = argon2.PasswordHasher()
                     ph.verify(collab.password, data.get("password"))
                 except argon2.exceptions.VerificationError:
-                    return JSONResponse({"error": "Invalid password !"})
+                    return JSONResponse({"error": "Invalid password !"}, status_code=400)
                 else:
                     # create jwt token
                     token = jwt.encode(
@@ -60,7 +60,7 @@ class CollabAPI:
                             "jwt_token": "Bearer " + token
                         }
                     )
-            return JSONResponse({"error": "email invalid !"})
+            return JSONResponse({"error": "email invalid !"}, status_code=400)
 
     @staticmethod
     @handle_db_errors
@@ -101,7 +101,7 @@ class CollabAPI:
         if cleaned_data:
 
             if cleaned_data.get("error"):
-                return JSONResponse(cleaned_data)
+                return JSONResponse(cleaned_data, status_code=400)
 
             ph = argon2.PasswordHasher()
             cleaned_data["password"] = ph.hash(cleaned_data["password"])
@@ -122,7 +122,7 @@ class CollabAPI:
         if cleaned_data:
 
             if cleaned_data.get("error"):
-                return JSONResponse(cleaned_data)
+                return JSONResponse(cleaned_data, status_code=400)
 
             stmt = select(Collaborator).where(Collaborator.id == request.path_params["id"])
             with request.state.db.begin() as session:
@@ -131,7 +131,7 @@ class CollabAPI:
                     for field, value in cleaned_data.items():
                         setattr(collab, field, value)
                     return JSONResponse({"status": "Collaborator updated"})
-                return JSONResponse({"error": "Invalid collaborator id"})
+                return JSONResponse({"error": "Invalid collaborator id"}, status_code=400)
         else:
             return JSONResponse({"error": "Unauthorized"}, status_code=401)
 
@@ -146,6 +146,6 @@ class CollabAPI:
                 if collab:
                     session.delete(collab)
                     return JSONResponse({"status": "Collaborator deleted"})
-                return JSONResponse({"error": "Invalid collaborator id"})
+                return JSONResponse({"error": "Invalid collaborator id"}, status_code=400)
         else:
             return JSONResponse({"error": "Unauthorized"}, status_code=401)

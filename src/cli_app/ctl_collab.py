@@ -15,36 +15,47 @@ class APIBase:
         self.base_url = "http://127.0.0.1:8000/"
         self.token_path = os.path.join(os.getcwd(), "token")
         self.console = Console()
+        self.input = ViewInput()
 
-    def get_api(self, route):
+    def request_api(self, route: str, data=None) -> dict | None:
         try:
             if token := self._get_token():
-                res = requests.get(
-                    url=self.base_url + route,
-                    headers={"Authorization": token}
-                )
-                return res
-            else:
-                self.console.print("No connected", style="red")
-        except requests.exceptions.ConnectionError:
-            print("Server unavailable")
+                if data:
+                    response = requests.post(
+                        url=self.base_url + route,
+                        json=data,
+                        headers={"Authorization": token}
+                    )
+                else:
+                    response = requests.get(
+                        url=self.base_url + route,
+                        headers={"Authorization": token}
+                    )
 
-    def post_api(self, route, data):
-        try:
-            if token := self._get_token():
-                res = requests.post(
-                    url=self.base_url + route,
-                    json=data,
-                    headers={"Authorization": token}
-                )
+                if response.status_code == 200:
+                    return response.json()
+                else:
+                    self.console.print(response.json().get("error"), style="red")
             else:
-                self.console.print("No connected", style="red")
+                self.console.print("You need to log in", style="red")
         except requests.exceptions.ConnectionError:
-            print("Server unavailable")
-        else:
-            return res
+            self.console.print("Server unavailable", style="red")
 
-    def _get_token(self):
+    def user_perm(roles: list[str]):
+        def decorator(func):
+            def wrapper(self, *args, **kwargs):
+                response = self.request_api("/session")
+                if response:
+                    if response.get("role") in roles:
+                        kwargs["user_role"] = response.get("role")
+                        kwargs["user_id"] = response.get("id")
+                        return func(self, *args, **kwargs)
+                    else:
+                        self.console.print("No authorized", style="red")
+            return wrapper
+        return decorator
+
+    def _get_token(self) -> str | None:
         if os.path.exists(self.token_path):
             with open(self.token_path, mode="r") as file:
                 token = file.readline()
@@ -54,72 +65,60 @@ class APIBase:
 class Collaborator(APIBase):
     def __init__(self):
         super().__init__()
-        self.input = ViewInput()
 
-    def login(self, email, password):
+    def login(self, email: str, password: str) -> None:
         try:
             url = self.base_url + "/login"
-            res = requests.post(url, json={"email": email, "password": password})
-            if res.status_code == 200:
-                msg = res.json()
-                if msg.get("error"):
-                    self.console.print(msg["error"], style="red")
-                else:
-                    token = msg.get("jwt_token")
-                    with open(self.token_path, mode="w") as file:
-                        file.write(token)
-                    self.console.print(msg["status"], style="green")
+            response = requests.post(url, json={"email": email, "password": password})
+            if response.status_code == 200:
+                token = response.json().get("jwt_token")
+                with open(self.token_path, mode="w") as file:
+                    file.write(token)
+                self.console.print(response.json().get("status"), style="green")
             else:
-                print("Internal error")
+                self.console.print(response.json().get("error"), style="red")
         except requests.exceptions.ConnectionError:
-            print("Server unavailable")
+            self.console.print("Server unavailable", style="red")
 
-    def logout(self):
+    def logout(self) -> None:
         if os.path.exists(self.token_path):
             os.remove(self.token_path)
         self.console.print("Deconnected", style="green")
 
     def get_list(self):
-        res = self.get_api("/collab").json()
-        if res.get("collaborators"):
+        response = self.request_api("/collab")
+        if response:
             select = SelectInput(
-                res,
+                response,
                 msg="List of collaborators"
             )
             select.live_show()
-        else:
-            self.console.print(res.get("error"), style="red")
 
-    def create_collab(self):
-        res = self.get_api("/session")
-        user_role = res.json().get("role")
-        if user_role == "gestion":
-            data = self.input.creation_input("collaborator", user_role)
-            res = self.post_api("/collab/create", data)
-            if res.status_code == 200:
-                decode_res = res.json()
-                if decode_res.get("status"):
-                    self.console.print(decode_res["status"], style="green")
-                else:
-                    self.console.print(decode_res["error"], style="red")
-        else:
-            self.console.print("No authorized", style="red")
+    @APIBase.user_perm(["gestion"])
+    def create_collab(self, **kwargs) -> None:
+        input_data = self.input.creation_input("collaborator", kwargs["user_role"])
+        response = self.request_api("/collab/create", input_data)
+        if response:
+            self.console.print(response["status"], style="green")
 
-    def update_collab(self):
-        res = self.get_api("/collab")
-        if res.status_code == 200:
+    @APIBase.user_perm(["gestion"])
+    def update_collab(self, **kwargs) -> None:
+        response = self.request_api("/collab")
+        if response:
             select = SelectInput(
-                res.json(),
+                response,
                 msg="Select collaborator to update",
                 select=True
             )
             selected_id = select.live_show()
+            print(selected_id)
 
-    def delete_collab(self):
-        res = self.get_api("/collab").json()
-        if res.get("collaborators"):
+    @APIBase.user_perm(["gestion"])
+    def delete_collab(self, **kwarg) -> None:
+        response = self.request_api("/collab")
+        if response:
             select = SelectInput(
-                res,
+                response,
                 msg="Select collaborator to update",
                 select=True
             )
@@ -127,10 +126,8 @@ class Collaborator(APIBase):
             if selected_id:
                 confirm = Confirm.ask("Are you sure to delete this collaborator")
                 if confirm:
-                    res = self.get_api(f"/collab/delete/{str(selected_id)}").json()
-                    if res.get("status"):
-                        self.console.print(res["status"], style="green")
-                    else:
-                        self.console.print(res.get("error") + "\n", style="red")
-        else:
-            self.console.print(res.get("error"))
+                    response = self.request_api(f"/collab/delete/{str(selected_id)}")
+                    if response:
+                        self.console.print(response["status"], style="green")
+                else:
+                    self.console.print("operation canceled", style="red")
