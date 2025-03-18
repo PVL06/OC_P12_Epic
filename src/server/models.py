@@ -14,7 +14,7 @@ class Collaborator(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(50))
-    email: Mapped[str] = mapped_column(String(255))
+    email: Mapped[str] = mapped_column(String(255), unique=True)
     phone: Mapped[str] = mapped_column(String(20))
     password: Mapped[str] = mapped_column(String(255))
     role_id: Mapped[int] = mapped_column(ForeignKey("role.id"))
@@ -45,7 +45,7 @@ class Client(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     name: Mapped[str] = mapped_column(String(50))
-    email: Mapped[str] = mapped_column(String(255))
+    email: Mapped[str] = mapped_column(String(255), unique=True)
     phone: Mapped[str] = mapped_column(String(20))
     company: Mapped[str] = mapped_column(String(255))
     create_date: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
@@ -65,7 +65,7 @@ class Contract(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     client_id: Mapped[int] = mapped_column(ForeignKey("client.id"))
-    commercial_id: Mapped[int] = mapped_column(ForeignKey("collaborator.id"))
+    commercial_id: Mapped[int] = mapped_column(ForeignKey("collaborator.id"), nullable=True)
     total_cost: Mapped[float] = mapped_column(Float)
     remaining_to_pay: Mapped[float] = mapped_column(Float)
     date: Mapped[datetime.date] = mapped_column(Date)
@@ -87,7 +87,7 @@ class Event(Base):
     client_id: Mapped[int] = mapped_column(ForeignKey("client.id"))
     event_start: Mapped[datetime.date] = mapped_column(Date)
     event_end: Mapped[datetime.date] = mapped_column(Date)
-    support_id: Mapped[int] = mapped_column(ForeignKey("collaborator.id"))
+    support_id: Mapped[int] = mapped_column(ForeignKey("collaborator.id"), nullable=True)
     location: Mapped[str] = mapped_column(String(255))
     attendees: Mapped[int] = mapped_column(Integer)
     note: Mapped[str] = mapped_column(Text)

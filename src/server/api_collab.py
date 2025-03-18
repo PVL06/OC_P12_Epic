@@ -84,7 +84,7 @@ class CollabAPI:
                 collaborators.append(
                     {
                         "id": collab.id,
-                        "complet_name": collab.name,
+                        "name": collab.name,
                         "email": collab.email,
                         "phone": collab.phone,
                         "role_id": collab.role.__str__()
