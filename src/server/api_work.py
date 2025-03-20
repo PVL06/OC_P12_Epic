@@ -3,12 +3,8 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 from starlette.requests import Request
 
-from server.db_manager import DBManager
 from server.models import Client, Contract, Event
 from server.permissions import handle_db_errors, check_permission_and_data
-
-
-manager = DBManager()
 
 
 class ClientAPI:
@@ -26,22 +22,21 @@ class ClientAPI:
         stmt = select(Client)
         with request.state.db.begin() as session:
             data = session.scalars(stmt).all()
-            clients = []
-            for client in data:
-                clients.append(
-                    {
-                        "id": client.id,
-                        "name": client.name,
-                        "email": client.email,
-                        "phone": client.phone,
-                        "company": client.company,
-                        "create_date": client.create_date.strftime("%d-%m-%Y %H:%M:%S"),
-                        "update_date": client.update_date.strftime(
-                            "%d-%m-%Y %H:%M:%S"
-                        ) if client.update_date else "never updated",
-                        "commercial": client.commercial.__str__()
-                    }
-                )
+            clients = [
+                {
+                    "id": client.id,
+                    "name": client.name,
+                    "email": client.email,
+                    "phone": client.phone,
+                    "company": client.company,
+                    "create_date": client.create_date.strftime("%d-%m-%Y %H:%M:%S"),
+                    "update_date": client.update_date.strftime(
+                        "%d-%m-%Y %H:%M:%S"
+                    ) if client.update_date else "never updated",
+                    "commercial": client.commercial.__str__()
+                }
+                for client in data
+            ]
         return JSONResponse({"clients": clients})
 
     @staticmethod
@@ -102,19 +97,18 @@ class ContractAPI:
         stmt = select(Contract)
         with request.state.db.begin() as session:
             data = session.scalars(stmt).all()
-            contracts = []
-            for contract in data:
-                contracts.append(
-                    {
-                        "id": contract.id,
-                        "client": contract.client.__str__(),
-                        "commercial": contract.commercial.__str__(),
-                        "total_cost": contract.total_cost,
-                        "remaining_to_pay": contract.remaining_to_pay,
-                        "date": contract.date.strftime("%d-%m-%Y"),
-                        "status": contract.status
-                    }
-                )
+            contracts = [
+                {
+                    "id": contract.id,
+                    "client": contract.client.__str__(),
+                    "commercial": contract.commercial.__str__(),
+                    "total_cost": contract.total_cost,
+                    "remaining_to_pay": contract.remaining_to_pay,
+                    "date": contract.date.strftime("%d-%m-%Y"),
+                    "status": contract.status
+                }
+                for contract in data
+            ]
         return JSONResponse({"contracts": contracts})
 
     @staticmethod
@@ -182,21 +176,20 @@ class EventAPI:
         stmt = select(Event)
         with request.state.db.begin() as session:
             data = session.scalars(stmt).all()
-            events = []
-            for event in data:
-                events.append(
-                    {
-                        "id": event.id,
-                        "contract": event.contract_id.__str__(),
-                        "client": event.client.__str__(),
-                        "event_start": event.event_start.strftime("%d-%m-%Y"),
-                        "event_end": event.event_end.strftime("%d-%m-%Y"),
-                        "support": event.support.__str__(),
-                        "location": event.location,
-                        "attendees": event.attendees,
-                        "note": event.note
-                    }
-                )
+            events = [
+                {
+                    "id": event.id,
+                    "contract": event.contract_id.__str__(),
+                    "client": event.client.__str__(),
+                    "event_start": event.event_start.strftime("%d-%m-%Y"),
+                    "event_end": event.event_end.strftime("%d-%m-%Y"),
+                    "support": event.support.__str__(),
+                    "location": event.location,
+                    "attendees": event.attendees,
+                    "note": event.note
+                }
+                for event in data
+            ]
         return JSONResponse({"events": events})
 
     @staticmethod

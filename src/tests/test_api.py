@@ -123,7 +123,7 @@ class TestApi:
         }
         res = client.post(url, json=credential)
         header = {
-            "Authorization": "Bearer " + res.json().get("jwt_token")
+            "Authorization": res.json().get("jwt_token")
         }
         return header
 
@@ -144,7 +144,7 @@ class TestApi:
             "password": "1234"
         }
         res = client.post(url, json=data)
-        assert res.status_code == 200
+        assert res.status_code == 400
         assert res.json() == {"error": "email invalid !"}
 
     def test_login_with_invalid_password(self, client):
@@ -154,7 +154,7 @@ class TestApi:
             "password": "12345"
         }
         res = client.post(url, json=data)
-        assert res.status_code == 200
+        assert res.status_code == 400
         assert res.json() == {"error": "Invalid password !"}
 
     # _____Tests for get collaborators and authorization with jwt token header_____
@@ -230,7 +230,7 @@ class TestApi:
             json={"address": "lorem ipsum"},
             headers=self._header_with_auth(client, gestion_user)
         )
-        assert res.status_code == 200
+        assert res.status_code == 400
         assert res.json() == {"error": "Invalid field: address"}
 
     def test_update_collaborator_with_invalid_value(self, client, gestion_user):
@@ -240,7 +240,7 @@ class TestApi:
             json={"phone": 22222222},
             headers=self._header_with_auth(client, gestion_user)
         )
-        assert res.status_code == 200
+        assert res.status_code == 400
         assert res.json() == {"error": "Invalid value for field: phone"}
 
     # _____Tests for delete collaborator and check invalid id in url_____
@@ -251,7 +251,7 @@ class TestApi:
             url,
             headers=self._header_with_auth(client, gestion_user)
         )
-        assert res.status_code == 200
+        assert res.status_code == 400
         assert res.json() == {'error': 'Invalid collaborator id'}
 
     def test_delete_collaborator_with_valid_url_id(self, client, gestion_user):

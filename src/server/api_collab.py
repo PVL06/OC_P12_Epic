@@ -8,11 +8,8 @@ from starlette.requests import Request
 import argon2
 import jwt
 
-from server.db_manager import DBManager
 from server.models import Collaborator
 from server.permissions import handle_db_errors, check_permission_and_data
-
-manager = DBManager()
 
 
 class CollabAPI:
@@ -79,17 +76,16 @@ class CollabAPI:
         stmt = select(Collaborator)
         with request.state.db.begin() as session:
             data = session.scalars(stmt).all()
-            collaborators = []
-            for collab in data:
-                collaborators.append(
-                    {
-                        "id": collab.id,
-                        "name": collab.name,
-                        "email": collab.email,
-                        "phone": collab.phone,
-                        "role_id": collab.role.__str__()
-                    }
-                )
+            collaborators = [
+                {
+                    "id": collab.id,
+                    "name": collab.name,
+                    "email": collab.email,
+                    "phone": collab.phone,
+                    "role_id": collab.role.__str__()
+                }
+                for collab in data
+            ]
         return JSONResponse({'collaborators': collaborators})
 
     @staticmethod
