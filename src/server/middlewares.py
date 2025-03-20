@@ -7,6 +7,8 @@ import jwt
 
 from server.db_manager import DBManager
 
+manager = DBManager()
+
 
 class JWTMiddleware(BaseHTTPMiddleware):
     def __init__(self, app):
@@ -38,13 +40,12 @@ class JWTMiddleware(BaseHTTPMiddleware):
 class DatabaseMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, dispatch=None, testing=False):
         super().__init__(app, dispatch)
-        self.db_manager = DBManager()
         self.testing = testing
 
     async def dispatch(self, request: Request, call_next):
         if self.testing:
-            request.state.db = self.db_manager.get_test_session()
+            request.state.db = manager.get_test_session()
         else:
-            request.state.db = self.db_manager.get_session()
+            request.state.db = manager.get_session()
         response = await call_next(request)
         return response

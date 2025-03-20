@@ -1,9 +1,9 @@
-from sqlalchemy import select
+from sqlalchemy import select, false
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 from starlette.requests import Request
 
-from server.models import Client, Contract, Event
+from server.models import Collaborator, Client, Contract, Event
 from server.permissions import handle_db_errors, check_permission_and_data
 
 
@@ -20,6 +20,10 @@ class ClientAPI:
     @handle_db_errors
     async def get_clients(request: Request) -> JSONResponse:
         stmt = select(Client)
+        if commercial_id := request.query_params.get("commercial_id"):
+            stmt = stmt.join(Collaborator).filter(Collaborator.id == commercial_id)
+        elif "unassigned" in request.query_params:
+            stmt = stmt.filter(Client.commercial_id.is_(None))
         with request.state.db.begin() as session:
             data = session.scalars(stmt).all()
             clients = [
@@ -42,28 +46,31 @@ class ClientAPI:
     @staticmethod
     @handle_db_errors
     async def create_client(request: Request) -> JSONResponse:
-        user = request.state.jwt_payload
-        data = await request.json()
-        cleaned_data = check_permission_and_data(Client, data, user.get("role"))
-        if cleaned_data:
+        role = request.state.jwt_payload.get("role")
+        user_id = request.state.jwt_payload.get("id")
+        if role == "commercial":
+            data = await request.json()
+            cleaned_data = check_permission_and_data(Client, data, role)
+            if cleaned_data:
 
-            if cleaned_data.get("error"):
-                return JSONResponse(cleaned_data, status_code=400)
+                if cleaned_data.get("error"):
+                    return JSONResponse(cleaned_data, status_code=400)
 
-            cleaned_data["commercial_id"] = user.get("id")
-            new_client = Client(**cleaned_data)
-            with request.state.db.begin() as session:
-                session.add(new_client)
-                return JSONResponse({"status": "Client created"})
-        else:
-            return JSONResponse({"error": "Unauthorized"}, status_code=401)
+                cleaned_data["commercial_id"] = user_id
+                new_client = Client(**cleaned_data)
+                with request.state.db.begin() as session:
+                    session.add(new_client)
+                    return JSONResponse({"status": "Client created"})
+
+        return JSONResponse({"error": "Unauthorized"}, status_code=401)
 
     @staticmethod
     @handle_db_errors
     async def update_client(request: Request):
-        user = request.state.jwt_payload
+        role = request.state.jwt_payload.get("role")
+        user_id = request.state.jwt_payload.get("id")
         data = await request.json()
-        cleaned_data = check_permission_and_data(Client, data, user.get("role"))
+        cleaned_data = check_permission_and_data(Client, data, role)
         if cleaned_data:
 
             if cleaned_data.get("error"):
@@ -72,12 +79,17 @@ class ClientAPI:
             stmt = select(Client).where(Client.id == request.path_params["id"])
             with request.state.db.begin() as session:
                 client = session.scalar(stmt)
-                if client.commercial_id == user.get("id"):
+                commecial_condition = all([role == "commercial", client.commercial_id == user_id])
+                support_condition = all([role == "gestion" and client.commercial_id is None])
+                if commecial_condition or support_condition:
                     for field, value in cleaned_data.items():
                         setattr(client, field, value)
                     return JSONResponse({"status": "Client updated"})
                 else:
-                    return JSONResponse({"error": "Not your client"}, status_code=400)
+                    return JSONResponse(
+                        {"error": "Not your client" if commecial_condition else "Commercial already assigned"},
+                        status_code=400
+                    )
         else:
             return JSONResponse({"error": "Unauthorized"}, status_code=401)
 
@@ -95,6 +107,17 @@ class ContractAPI:
     @handle_db_errors
     async def get_contracts(request: Request) -> JSONResponse:
         stmt = select(Contract)
+        if request.query_params.get("commercial_id"):
+            stmt = stmt.join(Collaborator)
+        for key, value in request.query_params.items():
+            match key:
+                case "commercial_id":
+                    stmt = stmt.filter(Collaborator.id == int(value))
+                case "no_signed":
+                    stmt = stmt.filter(Contract.status == false())
+                case "deptor":
+                    stmt = stmt.filter(Contract.remaining_to_pay > 0)
+
         with request.state.db.begin() as session:
             data = session.scalars(stmt).all()
             contracts = [
@@ -174,6 +197,12 @@ class EventAPI:
     @handle_db_errors
     async def get_events(request: Request) -> JSONResponse:
         stmt = select(Event)
+        print(request.query_params)
+        if support_id := request.query_params.get("support_id"):
+            stmt = stmt.join(Collaborator).filter(Collaborator.id == support_id)
+        elif "no_support" in request.query_params.keys():
+            stmt = stmt.filter(Event.support_id.is_(None))
+
         with request.state.db.begin() as session:
             data = session.scalars(stmt).all()
             events = [

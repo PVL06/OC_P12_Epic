@@ -8,7 +8,7 @@ from starlette.requests import Request
 import argon2
 import jwt
 
-from server.models import Collaborator
+from server.models import Collaborator, Role
 from server.permissions import handle_db_errors, check_permission_and_data
 
 
@@ -74,6 +74,8 @@ class CollabAPI:
     @handle_db_errors
     async def get_collaborators(request: Request) -> JSONResponse:
         stmt = select(Collaborator)
+        if role := request.query_params.get("role"):
+            stmt = stmt.join(Role).filter(Role.role == role)
         with request.state.db.begin() as session:
             data = session.scalars(stmt).all()
             collaborators = [
@@ -132,7 +134,7 @@ class CollabAPI:
             return JSONResponse({"error": "Unauthorized"}, status_code=401)
 
     @staticmethod
-    @handle_db_errors
+    # @handle_db_errors
     async def delete_collaborator(request: Request) -> JSONResponse:
         user_role = request.state.jwt_payload.get("role")
         if user_role == "gestion":

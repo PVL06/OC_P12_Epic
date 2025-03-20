@@ -22,7 +22,8 @@ def check_permission_and_data(class_model, input_data: dict, role: str) -> dict 
             "gestion": ["name", "email", "phone", "password", "role_id"]
         },
         "client": {
-            "commercial": ["name", "email", "phone", "company"]
+            "commercial": ["name", "email", "phone", "company"],
+            "gestion": ["commercial_id"]
         },
         "contract": {
             "gestion": ["client_id", "total_cost", "remaining_to_pay", "date", "status"],
@@ -56,7 +57,7 @@ def validator(field: str, value) -> bool:
 
     elif field[-3:] == "_id" or field in ["attendees", "total_cost", "remaining_to_pay"]:
         if isinstance(value, int):
-            if value > 0:
+            if value >= 0:
                 return True
         return False
 

@@ -2,6 +2,7 @@ import datetime
 
 from sqlalchemy import ForeignKey, String, DateTime, Date, Integer, Text, Float, Boolean, UniqueConstraint
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from typing import Optional
 from sqlalchemy.sql import func
 
 
@@ -21,8 +22,8 @@ class Collaborator(Base):
 
     role: Mapped["Role"] = relationship(back_populates="roles")
     clients: Mapped[list["Client"]] = relationship(back_populates="commercial")
-    contracts: Mapped["Contract"] = relationship(back_populates="commercial")
-    supports: Mapped["Event"] = relationship(back_populates="support")
+    contracts: Mapped[list["Contract"]] = relationship(back_populates="commercial")
+    supports: Mapped[list["Event"]] = relationship(back_populates="support")
 
     def __str__(self):
         return self.name
@@ -50,10 +51,10 @@ class Client(Base):
     company: Mapped[str] = mapped_column(String(255))
     create_date: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     update_date: Mapped[datetime.datetime] = mapped_column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
-    commercial_id: Mapped[int] = mapped_column(ForeignKey("collaborator.id"))
+    commercial_id: Mapped[Optional[int]] = mapped_column(ForeignKey("collaborator.id"), nullable=True)
 
-    commercial: Mapped["Collaborator"] = relationship(back_populates="clients")
-    contracts: Mapped["Contract"] = relationship(back_populates="client")
+    commercial: Mapped[Optional["Collaborator"]] = relationship(back_populates="clients")
+    contracts: Mapped[list["Contract"]] = relationship(back_populates="client")
     events: Mapped["Event"] = relationship(back_populates="client")
 
     def __str__(self):
@@ -65,14 +66,14 @@ class Contract(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     client_id: Mapped[int] = mapped_column(ForeignKey("client.id"))
-    commercial_id: Mapped[int] = mapped_column(ForeignKey("collaborator.id"), nullable=True)
+    commercial_id: Mapped[Optional[int]] = mapped_column(ForeignKey("collaborator.id"), nullable=True)
     total_cost: Mapped[float] = mapped_column(Float)
     remaining_to_pay: Mapped[float] = mapped_column(Float)
     date: Mapped[datetime.date] = mapped_column(Date)
     status: Mapped[bool] = mapped_column(Boolean)
 
     client: Mapped["Client"] = relationship(back_populates="contracts")
-    commercial: Mapped["Collaborator"] = relationship(back_populates="contracts")
+    commercial: Mapped[Optional["Collaborator"]] = relationship(back_populates="contracts")
     event: Mapped["Event"] = relationship(back_populates="contract")
 
     def __str__(self):
@@ -93,7 +94,7 @@ class Event(Base):
     note: Mapped[str] = mapped_column(Text)
 
     client: Mapped["Client"] = relationship(back_populates="events")
-    support: Mapped["Collaborator"] = relationship(back_populates="supports")
+    support: Mapped[Optional["Collaborator"]] = relationship(back_populates="supports")
     contract: Mapped["Contract"] = relationship(back_populates="event")
 
     __table_args__ = (UniqueConstraint("contract_id"),)
