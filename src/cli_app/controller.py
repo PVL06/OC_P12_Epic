@@ -4,7 +4,7 @@ import requests
 from rich.console import Console
 from rich.prompt import Confirm
 
-from cli_app.views import ViewInput, ViewSelect
+from cli_app.views import ViewInput, ViewSelect, FIELDS_PROMPT
 
 
 class APIBase:
@@ -13,7 +13,7 @@ class APIBase:
         self.base_url = "http://127.0.0.1:8000/"
         self.token_path = os.path.join(os.getcwd(), "token")
         self.console = Console()
-        self.input = ViewInput()
+        self.view = ViewInput()
 
     def request_api(self, route: str, data=None) -> dict | None:
         try:
@@ -53,7 +53,7 @@ class APIBase:
             return wrapper
         return decorator
 
-    def update_field(self, route: str, data: dict, id: int) -> None:
+    def update_input(self, route: str, data: dict, id: int) -> None:
         loop = True
         while loop:
             select = ViewSelect(
@@ -63,10 +63,10 @@ class APIBase:
             )
             field = select.live_show(id)
             if field:
-                value = self.console.input(f"{field[0]} ({field[1]}): ")
-                valid_value = self.input.check_input(field[0], value)
+                value = self.console.input(FIELDS_PROMPT.get(field[0]))
+                valid_value = self.view.check_input(field[0], value)
                 if valid_value is not None:
-                    data = self.request_api(
+                    res = self.request_api(
                                 f"{route}/update/{id}",
                                 data={field[0]: valid_value}
                             )
@@ -74,8 +74,8 @@ class APIBase:
                     self.console.print(f"Invalid input for field {field[0]}", style="red")
                 confirm = Confirm.ask("Update another field")
                 if confirm:
-                    data = self.request_api(route)
-                    if not data:
+                    res = self.request_api(route)
+                    if not res:
                         loop = False
                 else:
                     loop = False
@@ -92,6 +92,7 @@ class APIBase:
 class Collaborator(APIBase):
     def __init__(self):
         super().__init__()
+        self.role_filter = ["gestion", "commercial", "support"]
 
     def login(self, email: str, password: str) -> None:
         try:
@@ -112,30 +113,39 @@ class Collaborator(APIBase):
             os.remove(self.token_path)
         self.console.print("Deconnected", style="green")
 
-    def get_list(self):
-        response = self.request_api("/collab")  # filter by role
-        if response.get("collaborators"):
-            select = ViewSelect(
-                response,
-                msg="List of collaborators"
-            )
-            select.live_show()
-        else:
-            self.console.print("No collaborator", style="red")
+    def get_list(self, filter=None):
+        route = "/collab"
+        # optional filter by role
+        if filter in self.role_filter:
+            route += f"?role={filter}"
+
+        if collabs := self.request_api(route):
+            if collabs.get("collaborators"):
+                select = ViewSelect(
+                    collabs,
+                    msg="List of collaborators"
+                )
+                select.live_show()
+            else:
+                self.console.print("No collaborator", style="red")
 
     @APIBase.user_perm(["gestion"])
     def create_collab(self, **kwargs) -> None:
-        input_data = self.input.creation_input("collaborator", kwargs["user_role"])
-        response = self.request_api("/collab/create", input_data)
-        if response:
+        input_data = self.view.creation_input("collaborator", kwargs["user_role"])
+        if response := self.request_api("/collab/create", input_data):
             self.console.print(response["status"], style="green")
 
     @APIBase.user_perm(["gestion"])
-    def update_collab(self, **kwargs) -> None:
+    def update_collab(self, filter=None, **kwargs) -> None:
+        route = "/collab"
+        # optional filter by role
+        if filter in self.role_filter:
+            route += f"?role={filter}"
+
         loop = True
         while loop:
-            collabs = self.request_api("/collab")  # filter by role
-            if collabs:
+            collabs = self.request_api(route)
+            if collabs.get("collaborators"):
                 select = ViewSelect(
                     collabs,
                     msg="Select collaborator to update",
@@ -143,16 +153,22 @@ class Collaborator(APIBase):
                 )
                 collab_id = select.live_show()
                 if collab_id:
-                    self.update_field(route="/collab", data=collabs, id=collab_id)
+                    self.update_input(route="/collab", data=collabs, id=collab_id)
                 else:
                     loop = False
             else:
+                self.console.print("No collaborator", style="red")
                 loop = False
 
     @APIBase.user_perm(["gestion"])
-    def delete_collab(self, **kwarg) -> None:
-        collabs = self.request_api("/collab")
-        if collabs:
+    def delete_collab(self, filter=None, **kwarg) -> None:
+        route = "/collab"
+        # optional filter by role
+        if filter in self.role_filter:
+            route += f"?role={filter}"
+
+        collabs = self.request_api(route)
+        if collabs.get("collaborators"):
             select = ViewSelect(
                 collabs,
                 msg="Select collaborator to update",
@@ -167,77 +183,107 @@ class Collaborator(APIBase):
                         self.console.print(response["status"], style="green")
                 else:
                     self.console.print("operation canceled", style="red")
+        else:
+            self.console.print("No collaborators", style="red")
 
 
 class Client(APIBase):
     def __init__(self):
         super().__init__()
 
-    def get_list(self):
-        response = self.request_api("/client")  # filter commercial client
-        if response.get("clients"):
-            select = ViewSelect(
-                response,
-                msg="List of clients"
-            )
-            select.live_show()
-        else:
-            self.console.print("No client", style="red")
+    def get_list(self, filter=None):
+        route = "/client"
+        # filter for clients without an assigned commercial
+        if filter == "unassigned":
+            route += "?unassigned"
+
+        if clients := self.request_api(route):
+            if clients.get("clients"):
+                select = ViewSelect(
+                    clients,
+                    msg="List of clients"
+                )
+                select.live_show()
+            else:
+                self.console.print("No client", style="red")
 
     @APIBase.user_perm(["commercial"])
     def create_client(self, **kwargs):
-        input_data = self.input.creation_input("client", kwargs["user_role"])
-        response = self.request_api("/client/create", input_data)
-        if response:
+        input_data = self.view.creation_input("client", kwargs["user_role"])
+        if response := self.request_api("/client/create", input_data):
             self.console.print(response["status"], style="green")
 
-    @APIBase.user_perm(["commercial"])
+    @APIBase.user_perm(["commercial", "gestion"])
     def update_client(self, **kwargs):
         loop = True
         while loop:
-            clients = self.request_api("/client")  # filter commercial client
-            if clients:
+            if kwargs["user_role"] == "commercial":
+                # filter only commercial client
+                clients = self.request_api(f"/client?commercial_id={kwargs['user_id']}")
+            elif kwargs["user_role"] == "gestion":
+                # filter only clients without an assigned commercial
+                clients = self.request_api("/client?unassigned")
+
+            if clients.get("clients"):
                 select = ViewSelect(
                     clients,
                     msg="Select client to update",
                     select=True
                 )
-                client_id = select.live_show()
-                if client_id:
-                    self.update_field(route="/client", data=clients, id=client_id)
+                if client_id := select.live_show():
+                    if kwargs["user_role"] == "commercial":
+                        self.update_input(route="/client", data=clients, id=client_id)
+                    elif kwargs["user_role"] == "gestion":
+                        commercials = self.request_api("/collab?role=commercial")
+                        select = ViewSelect(
+                            commercials,
+                            msg="Select the commercial to assign to this client",
+                            select=True
+                        )
+                        if commercial_id := select.live_show():
+                            self.request_api(
+                                route=f"/client/update/{client_id}",
+                                data={"commercial_id": commercial_id}
+                            )
+                        else:
+                            loop = False
                 else:
                     loop = False
             else:
+                self.console.print("No clients to update", style="red")
                 loop = False
 
 
 class Contract(APIBase):
     def __init__(self):
         super().__init__()
+        self.filters = ["no_signed", "debtor"]
 
-    def get_list(self):
-        contracts = self.request_api("/contract")  # filter by client and by positive remaining to pay
-        if contracts.get("contracts"):
-            select = ViewSelect(
-                contracts,
-                msg="List of contract"
-            )
-            select.live_show()
-        else:
-            self.console.print("No contract", style="red")
+    def get_list(self, filter=None):
+        route = "/contract"
+        if filter in self.filters:
+            route += f"?{filter}"
+
+        if contracts := self.request_api(route):
+            if contracts.get("contracts"):
+                select = ViewSelect(
+                    contracts,
+                    msg="List of contract"
+                )
+                select.live_show()
+            else:
+                self.console.print("No contract", style="red")
 
     @APIBase.user_perm(["gestion"])
     def create_contract(self, **kwargs):
-        clients = self.request_api("/client")  # filter commercial client
-        if clients:
+        if clients := self.request_api("/client"):
             select = ViewSelect(
                 clients,
                 msg="Select the client for the new contract",
                 select=True
             )
-            client_id = select.live_show()
-            if client_id:
-                input_data = self.input.creation_input("contract", kwargs["user_role"])
+            if client_id := select.live_show():
+                input_data = self.view.creation_input("contract", kwargs["user_role"])
                 input_data.update({"client_id": client_id})
                 response = self.request_api("/contract/create", input_data)
                 if response:
@@ -247,19 +293,24 @@ class Contract(APIBase):
     def update_contract(self, **kwargs):
         loop = True
         while loop:
-            contracts = self.request_api("/contract")  # filter if commercial (contract from commercial client)
-            if contracts:
+            # filter contracts only for commercial client, all for gestion
+            if kwargs.get("user_role") == "commercial":
+                contracts = self.request_api(f"/contract?commercial_id={kwargs['user_id']}")
+            elif kwargs.get("user_role") == "gestion":
+                contracts = self.request_api("/contract")
+
+            if contracts.get("contracts"):
                 select = ViewSelect(
                     contracts,
                     msg="Select contract to update",
                     select=True
                 )
-                contract_id = select.live_show()
-                if contract_id:
-                    self.update_field(route="/contract", data=contracts, id=contract_id)
+                if contract_id := select.live_show():
+                    self.update_input(route="/contract", data=contracts, id=contract_id)
                 else:
                     loop = False
             else:
+                self.console.print("No contracts", style="red")
                 loop = False
 
 
@@ -267,33 +318,40 @@ class Event(APIBase):
     def __init__(self):
         super().__init__()
 
-    def get_list(self):
-        events = self.request_api("/event")  # add filter for event with no support, by client, by support event
-        if events.get("events"):
-            select = ViewSelect(
-                events,
-                msg="List of events"
-            )
-            select.live_show()
-        else:
-            self.console.print("No event", style="red")
+    def get_list(self, filter=None):
+        route = "/event"
+        if filter == "no_support":
+            route += "?no_support"
+
+        events = self.request_api(route)
+        if events:
+            if events.get("events"):
+                select = ViewSelect(
+                    events,
+                    msg="List of events"
+                )
+                select.live_show()
+            else:
+                self.console.print("No event", style="red")
 
     @APIBase.user_perm(["commercial"])
     def create_event(self, **kwargs):
-        contracts = self.request_api("/contract")  # filter only contract for commercial client
-        if contracts:
+        # filter only contract for commercial client
+        contracts = self.request_api("/contract")
+        if contracts.get("contracts"):
             select = ViewSelect(
                 contracts,
                 msg="Select contact for this event",
                 select=True
             )
-            contract_id = select.live_show()
-            if contract_id:
-                input_data = self.input.creation_input("event", kwargs["user_role"])
+            if contract_id := select.live_show():
+                input_data = self.view.creation_input("event", kwargs["user_role"])
                 input_data.update({"contract_id": contract_id})
                 response = self.request_api("/event/create", input_data)
                 if response:
                     self.console.print(response["status"], style="green")
+        else:
+            self.console.print("No contract", style="red")
 
     @APIBase.user_perm(["gestion", "support"])
     def update_event(self, **kwargs):
@@ -301,9 +359,10 @@ class Event(APIBase):
 
         if kwargs["user_role"] == "gestion":
             while loop:
-                events = self.request_api("/event")  # possible to add filter -> event with no support
-                supports = self.request_api("/collab")  # filter only support collaborator
-                if events and supports:
+                # filter only event with no support and collaborator with support role
+                events = self.request_api("/event?no_support")
+                supports = self.request_api("/collab?role=support")
+                if events.get("events") and supports.get("collaborators"):
                     select = ViewSelect(
                         events,
                         msg="Select event to update",
@@ -328,17 +387,18 @@ class Event(APIBase):
 
         elif kwargs["user_role"] == "support":
             while loop:
-                events = self.request_api("/event")  # filter only support event
-                if events:
+                # filter only support user event
+                events = self.request_api(f"/event?support_id={kwargs['user_id']}")
+                if events.get("events"):
                     select = ViewSelect(
                         events,
                         msg="Select event to update",
                         select=True
                     )
-                    event_id = select.live_show()
-                    if event_id:
-                        self.update_field(route="/event", data=events, id=event_id)
+                    if event_id := select.live_show():
+                        self.update_input(route="/event", data=events, id=event_id)
                     else:
                         loop = False
                 else:
+                    self.console.print("No event assigned", style="red")
                     loop = False

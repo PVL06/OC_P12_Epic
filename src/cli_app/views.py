@@ -55,7 +55,7 @@ class ViewInput:
                     data[field] = value
                     loop = False
                 else:
-                    self.console.print(f"Invalid input for field {field[0]}", style="red")
+                    self.console.print(f"Invalid input for field {field}", style="red")
         return data
 
     def check_input(self, field: str, value: str):
@@ -114,7 +114,7 @@ class ViewSelect:
 
     def _create_table(self) -> Table:
         table = Table(
-            title=self.title.capitalize(),
+            title=f" {self.title.capitalize()}",
             title_justify="left",
             title_style="black on green"
         )

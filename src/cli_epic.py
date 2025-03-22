@@ -32,19 +32,20 @@ def logout():
 @click.option("-c", "--create", is_flag=True, help="Create new collaborator")
 @click.option("-u", "--update", is_flag=True, help="Update a collaborator")
 @click.option("-d", "--delete", is_flag=True, help="Delete a collaborator")
-def collab(create, update, delete):
+@click.option("-f", "--filter", type=str, help="filter by role")
+def collab(create, update, delete, filter):
     options_selected = sum([create, update, delete])
 
     if options_selected == 0:
-        collaborator_ctl.get_list()
+        collaborator_ctl.get_list(filter=filter)
 
     elif options_selected == 1:
         if create:
             collaborator_ctl.create_collab()
         elif update:
-            collaborator_ctl.update_collab()
+            collaborator_ctl.update_collab(filter=filter)
         elif delete:
-            collaborator_ctl.delete_collab()
+            collaborator_ctl.delete_collab(filter=filter)
     else:
         console.print("Multiple options not allowed", style="red")
 
@@ -52,11 +53,12 @@ def collab(create, update, delete):
 @click.command()
 @click.option("-c", "--create", is_flag=True, help="Create new client")
 @click.option("-u", "--update", is_flag=True, help="Update a client")
-def client(create, update):
+@click.option("-f", "--filter", is_flag=True, help="filter clients without an assigned commercial")
+def client(create, update, filter):
     options_selected = sum([create, update])
 
     if options_selected == 0:
-        client_ctl.get_list()
+        client_ctl.get_list(filter=filter)
 
     elif options_selected == 1:
         if create:
@@ -70,11 +72,12 @@ def client(create, update):
 @click.command()
 @click.option("-c", "--create", is_flag=True, help="Create new contract")
 @click.option("-u", "--update", is_flag=True, help="Update a contract")
-def contract(create, update):
+@click.option("-f", "--filter", type=str, help="filter contract no signed (no_signed) or debtor client (debtor) ")
+def contract(create, update, filter):
     options_selected = sum([create, update])
 
     if options_selected == 0:
-        contract_ctl.get_list()
+        contract_ctl.get_list(filter)
 
     elif options_selected == 1:
         if create:

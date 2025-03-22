@@ -115,7 +115,7 @@ class ContractAPI:
                     stmt = stmt.filter(Collaborator.id == int(value))
                 case "no_signed":
                     stmt = stmt.filter(Contract.status == false())
-                case "deptor":
+                case "debtor":
                     stmt = stmt.filter(Contract.remaining_to_pay > 0)
 
         with request.state.db.begin() as session:
@@ -127,7 +127,7 @@ class ContractAPI:
                     "commercial": contract.commercial.__str__(),
                     "total_cost": contract.total_cost,
                     "remaining_to_pay": contract.remaining_to_pay,
-                    "date": contract.date.strftime("%d-%m-%Y"),
+                    "date": contract.date.strftime("%d/%m/%Y"),
                     "status": contract.status
                 }
                 for contract in data
@@ -197,7 +197,6 @@ class EventAPI:
     @handle_db_errors
     async def get_events(request: Request) -> JSONResponse:
         stmt = select(Event)
-        print(request.query_params)
         if support_id := request.query_params.get("support_id"):
             stmt = stmt.join(Collaborator).filter(Collaborator.id == support_id)
         elif "no_support" in request.query_params.keys():
@@ -210,8 +209,8 @@ class EventAPI:
                     "id": event.id,
                     "contract": event.contract_id.__str__(),
                     "client": event.client.__str__(),
-                    "event_start": event.event_start.strftime("%d-%m-%Y"),
-                    "event_end": event.event_end.strftime("%d-%m-%Y"),
+                    "event_start": event.event_start.strftime("%d/%m/%Y"),
+                    "event_end": event.event_end.strftime("%d/%m/%Y"),
                     "support": event.support.__str__(),
                     "location": event.location,
                     "attendees": event.attendees,
@@ -237,13 +236,22 @@ class EventAPI:
             with request.state.db.begin() as session:
                 contract = session.scalar(stmt)
                 if contract:
-                    if contract.commercial_id == user.get("id"):
-                        cleaned_data["client_id"] = contract.client_id
-                        event = Event(**cleaned_data)
-                        session.add(event)
-                        return JSONResponse({"status": "Event created"})
+                    stmt = select(Event).where(Event.contract_id == contract.id)
+                    event = session.scalar(stmt)
+                    if event is None:
+                        conditions = [
+                            contract.commercial_id == user.get("id"),
+                            contract.status
+                        ]
+                        if all(conditions):
+                            cleaned_data["client_id"] = contract.client_id
+                            event = Event(**cleaned_data)
+                            session.add(event)
+                            return JSONResponse({"status": "Event created"})
+                        else:
+                            return JSONResponse({"error": "Not your client or contract unsigned"}, status_code=400)
                     else:
-                        return JSONResponse({"error": "Not your client"}, status_code=400)
+                        return JSONResponse({"error": "Event is already created for this contract"}, status_code=400)
                 else:
                     return JSONResponse({"error": "Invalid contract id"}, status_code=400)
         else:
@@ -253,6 +261,7 @@ class EventAPI:
     @handle_db_errors
     async def update_event(request: Request) -> JSONResponse:
         user_role = request.state.jwt_payload.get("role")
+        user_id = request.state.jwt_payload.get("id")
 
         if user_role in ["gestion", "support"]:
             data = await request.json()
@@ -265,6 +274,8 @@ class EventAPI:
             with request.state.db.begin() as session:
                 event = session.scalar(stmt)
                 if event:
+                    if user_role == "support" and event.support_id != user_id:
+                        return JSONResponse({"error": "Not your event"}, status_code=400)
                     for field, value in cleaned_data.items():
                         setattr(event, field, value)
                     return JSONResponse({"status": "Event updated"})
