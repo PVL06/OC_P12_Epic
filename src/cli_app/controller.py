@@ -2,7 +2,7 @@ import os
 import requests
 
 from rich.console import Console
-from rich.prompt import Confirm
+from rich.prompt import Confirm, Prompt
 
 from cli_app.views import ViewInput, ViewSelect, FIELDS_PROMPT
 
@@ -112,6 +112,21 @@ class Collaborator(APIBase):
         if os.path.exists(self.token_path):
             os.remove(self.token_path)
         self.console.print("Deconnected", style="green")
+
+    def change_pwd(self):
+        pwd_1 = Prompt.ask("Enter new password", password=True)
+        pwd_2 = Prompt.ask("Confirm password", password=True)
+        if len(pwd_1) >= 6:
+            if pwd_1 == pwd_2:
+                response = self.request_api("/change_pwd", data={"password": pwd_1})
+                if response:
+                    self.console.print(response.get("status"), style="green")
+                    self.logout()
+                    self.console.print("You need to login with the new password")
+            else:
+                self.console.print("confirm password do not match", style="red")
+        else:
+            self.console.print("Password is too short, minimum 6 chars")
 
     def get_list(self, filter=None):
         route = "/collab"

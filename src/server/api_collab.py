@@ -18,6 +18,7 @@ class CollabAPI:
     def get_routes(cls) -> list[Route]:
         return [
             Route('/login', cls.login, methods=["POST"]),
+            Route('/change_pwd', cls.change_pwd, methods=["POST"]),
             Route('/session', cls.session, methods=["GET"]),
             Route('/collab', cls.get_collaborators, methods=["GET"]),
             Route('/collab/create', cls.create_collaborator, methods=["POST"]),
@@ -58,6 +59,24 @@ class CollabAPI:
                         }
                     )
             return JSONResponse({"error": "email invalid !"}, status_code=400)
+
+    @staticmethod
+    @handle_db_errors
+    async def change_pwd(request: Request) -> JSONResponse:
+        data = await request.json()
+        password = data.get("password")
+        if len(password) >= 6:
+            ph = argon2.PasswordHasher()
+            hached_pwd = ph.hash(password)
+            user_id = request.state.jwt_payload.get("id")
+
+            stmt = select(Collaborator).where(Collaborator.id == user_id)
+            with request.state.db.begin() as session:
+                user = session.scalar(stmt)
+                user.password = hached_pwd
+            return JSONResponse({"status": "Password updated"})
+        else:
+            JSONResponse({"error": "password too short"})
 
     @staticmethod
     @handle_db_errors

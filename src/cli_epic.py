@@ -29,6 +29,11 @@ def logout():
 
 
 @click.command()
+def password():
+    collaborator_ctl.change_pwd()
+
+
+@click.command()
 @click.option("-c", "--create", is_flag=True, help="Create new collaborator")
 @click.option("-u", "--update", is_flag=True, help="Update a collaborator")
 @click.option("-d", "--delete", is_flag=True, help="Delete a collaborator")
@@ -106,7 +111,7 @@ def event(create, update):
         console.print("Multiple options not allowed", style="red")
 
 
-commands = [login, logout, collab, client, contract, event]
+commands = [login, logout, password, collab, client, contract, event]
 
 for command in commands:
     cli.add_command(command)
