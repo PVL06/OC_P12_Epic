@@ -13,6 +13,7 @@ dependencies = [
     "pyjwt>=2.10.1",
     "pytest>=8.3.5",
     "pytest-cov>=6.0.0",
+    "pytest-mock>=3.14.0",
     "python-dotenv>=1.0.1",
     "sqlalchemy>=2.0.38",
     "starlette>=0.46.1",

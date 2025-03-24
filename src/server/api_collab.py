@@ -153,7 +153,7 @@ class CollabAPI:
             return JSONResponse({"error": "Unauthorized"}, status_code=401)
 
     @staticmethod
-    # @handle_db_errors
+    @handle_db_errors
     async def delete_collaborator(request: Request) -> JSONResponse:
         user_role = request.state.jwt_payload.get("role")
         if user_role == "gestion":

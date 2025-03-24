@@ -54,7 +54,7 @@ def commercial_user():
     return {
         "name": "collab 1",
         "email": "collab1@gmail.com",
-        "phone": "12345678",
+        "phone": "11111111",
         "password": "1234",
         "role_id": 2
     }
@@ -65,7 +65,7 @@ def support_user():
     return {
         "name": "support 1",
         "email": "support1@gmail.com",
-        "phone": "12345678",
+        "phone": "222222222",
         "password": "1234",
         "role_id": 3
     }
@@ -349,9 +349,28 @@ class TestApi:
         assert res.status_code == 200
         assert len(res.json().get("events")) == 1
 
-    def test_update_event(self, client, gestion_user, support_user):
+    def test_update_event_support_by_gestion(self, client, gestion_user, support_user):
         # create support user
-        self.test_create_new_collab_with_valid_role(client, gestion_user, support_user)
+        url = base_url + "/collab/create"
+        res = client.post(
+            url,
+            json=support_user,
+            headers=self._header_with_auth(client, gestion_user)
+        )
+        res_data = res.json()
+        assert res.status_code == 200
+        assert res_data.get("status") == "New collaborator created"
+
+        url = base_url + "/event/update/1"
+        res = client.post(
+            url,
+            json={"support_id": 4},
+            headers=self._header_with_auth(client, gestion_user)
+        )
+        assert res.status_code == 200
+        assert res.json() == {"status": "Event updated"}
+
+    def test_update_event_by_support(self, client, support_user):
         url = base_url + "/event/update/1"
         res = client.post(
             url,
