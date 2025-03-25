@@ -96,11 +96,12 @@ def contract(create, update, filter):
 @click.command()
 @click.option("-c", "--create", is_flag=True, help="Create new event")
 @click.option("-u", "--update", is_flag=True, help="Update a event")
-def event(create, update):
+@click.option("-f", "--filter", type=str, help="filter events with no support assigned (no_support)")
+def event(create, update, filter):
     options_selected = sum([create, update])
 
     if options_selected == 0:
-        event_ctl.get_list()
+        event_ctl.get_list(filter=filter)
 
     elif options_selected == 1:
         if create:

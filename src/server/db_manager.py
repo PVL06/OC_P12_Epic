@@ -1,37 +1,34 @@
-import os
-
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from dotenv import load_dotenv
 from argon2 import PasswordHasher
 
+from server import config
 from server.models import Base, Role, Collaborator
 
 
 class DBManager:
 
     def __init__(self):
-        load_dotenv()
         ph = PasswordHasher()
-        self.db_app = os.getenv('DB_APP')
-        self.db_test = os.getenv('DB_TEST')
-        self.db_root = os.getenv('DB_ROOT')
+        self.db_app = config.DB_APP
+        self.db_test = config.DB_TEST
+        self.db_root = config.DB_ROOT
 
         self.credentials = {
-            "user": os.getenv('DB_USER'),
-            "password": os.getenv('DB_PWD'),
+            "user": config.DB_USER,
+            "password": config.DB_PWD,
         }
 
-        self.engine = create_engine(f"postgresql+psycopg2://{os.getenv('DB_APP_URL')}")
-        self.engine_test = create_engine(f"postgresql+psycopg2://{os.getenv('DB_TEST_URL')}")
+        self.engine = create_engine(config.DB_APP_URL)
+        self.engine_test = create_engine(config.DB_TEST_URL)
 
         self.first_user = {
-            "name": os.getenv('USER_NAME'),
-            "email": os.getenv('USER_EMAIL'),
-            "phone": os.getenv('USER_PHONE'),
-            "password": ph.hash(os.getenv('USER_PASSWORD')),
+            "name": config.USER_NAME,
+            "email": config.USER_EMAIL,
+            "phone": "0000",
+            "password": ph.hash(config.USER_PASSWORD),
             "role_id": 1
         }
 

@@ -1,4 +1,3 @@
-import os
 import datetime
 
 from sqlalchemy import select
@@ -7,7 +6,9 @@ from starlette.routing import Route
 from starlette.requests import Request
 import argon2
 import jwt
+from sentry_sdk import capture_message
 
+from server.config import SECRET_KEY
 from server.models import Collaborator, Role
 from server.permissions import handle_db_errors, check_permission_and_data
 
@@ -49,7 +50,7 @@ class CollabAPI:
                             "role": collab.role.__str__(),
                             "exp": datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(hours=1)
                         },
-                        os.getenv("SECRET_KEY"),
+                        SECRET_KEY,
                         algorithm="HS256"
                     )
                     return JSONResponse(
@@ -148,7 +149,9 @@ class CollabAPI:
                     for field, value in cleaned_data.items():
                         setattr(collab, field, value)
                     return JSONResponse({"status": "Collaborator updated"})
-                return JSONResponse({"error": "Invalid collaborator id"}, status_code=400)
+                else:
+                    capture_message("Outside the CLI application", "warning")
+                    return JSONResponse({"error": "Invalid collaborator id"}, status_code=400)
         else:
             return JSONResponse({"error": "Unauthorized"}, status_code=401)
 
@@ -163,6 +166,8 @@ class CollabAPI:
                 if collab:
                     session.delete(collab)
                     return JSONResponse({"status": "Collaborator deleted"})
-                return JSONResponse({"error": "Invalid collaborator id"}, status_code=400)
+                else:
+                    capture_message("Outside the CLI application", "warning")
+                    return JSONResponse({"error": "Invalid collaborator id"}, status_code=400)
         else:
             return JSONResponse({"error": "Unauthorized"}, status_code=401)

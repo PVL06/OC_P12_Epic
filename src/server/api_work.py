@@ -3,6 +3,7 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route
 from starlette.requests import Request
 
+from sentry_sdk import capture_message
 from server.models import Collaborator, Client, Contract, Event
 from server.permissions import handle_db_errors, check_permission_and_data
 
@@ -86,6 +87,7 @@ class ClientAPI:
                         setattr(client, field, value)
                     return JSONResponse({"status": "Client updated"})
                 else:
+                    capture_message("Outside the CLI application", "warning")
                     return JSONResponse(
                         {"error": "Not your client" if commecial_condition else "Commercial already assigned"},
                         status_code=400
@@ -154,6 +156,7 @@ class ContractAPI:
                     session.add(new_contract)
                     return JSONResponse({"status": "contract created"})
                 else:
+                    capture_message("Outside the CLI application", "warning")
                     return JSONResponse({"error": "Invalid client"}, status_code=400)
         else:
             return JSONResponse({"error": "Unauthorized"}, status_code=401)
@@ -179,6 +182,7 @@ class ContractAPI:
                         setattr(contract, field, value)
                     return JSONResponse({"status": "Contract updated"})
                 else:
+                    capture_message("Outside the CLI application", "warning")
                     return JSONResponse({"error": "Invalid contract"}, status_code=400)
         else:
             return JSONResponse({"error": "Unauthorized"}, status_code=401)
@@ -249,10 +253,12 @@ class EventAPI:
                             session.add(event)
                             return JSONResponse({"status": "Event created"})
                         else:
+                            capture_message("Outside the CLI application", "warning")
                             return JSONResponse({"error": "Not your client or contract unsigned"}, status_code=400)
                     else:
                         return JSONResponse({"error": "Event is already created for this contract"}, status_code=400)
                 else:
+                    capture_message("Outside the CLI application", "warning")
                     return JSONResponse({"error": "Invalid contract id"}, status_code=400)
         else:
             return JSONResponse({"error": "Unauthorized"}, status_code=401)
@@ -280,6 +286,7 @@ class EventAPI:
                         setattr(event, field, value)
                     return JSONResponse({"status": "Event updated"})
                 else:
+                    capture_message("Outside the CLI application", "warning")
                     return JSONResponse({"error": "Invalid event id"}, status_code=400)
         else:
             return JSONResponse({"error": "Unauthorized"}, status_code=401)
