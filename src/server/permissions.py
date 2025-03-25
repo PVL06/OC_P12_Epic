@@ -75,8 +75,12 @@ def validator(field: str, value) -> bool:
         if isinstance(value, str):
             return len(value) > 3
 
-    elif field in ["date", "event_start", "event_end"]:
-        pattern = r'^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$'
+    elif field == "date":
+        pattern = r"^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$"
+        return re.match(pattern, value)
+
+    elif field in ["event_start", "event_end"]:
+        pattern = r"^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/(20[2-9][0-9]) ([01][0-9]|2[0-3]):([0-5][0-9])$"
         return re.match(pattern, value)
 
     elif field == "status":

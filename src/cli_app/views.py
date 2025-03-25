@@ -29,8 +29,8 @@ FIELDS_PROMPT = {
     "role_id": "Enter collaborator role (1: gestion, 2: commercial, 3: support): ",
     "remaining_to_pay": "Enter remaining to pay: ",
     "date": "Enter date (format: dd/mm/yyy): ",
-    "event_start": "Enter event start date (format: dd/mm/yyy): ",
-    "event_end": "Enter event end date (format: dd/mm/yyy): ",
+    "event_start": "Enter event start date and hour(format: dd/mm/yyyy hh:mm): ",
+    "event_end": "Enter event end date and hour(format: dd/mm/yyyy hh:mm): ",
     "status": "Contract signed? (0: no, 1: yes): ",
     "company": "Enter company name: ",
     "location": "Enter event location for this event: ",
@@ -82,8 +82,13 @@ class ViewInput:
             if value in ["1", "2", "3"]:
                 return int(value)
             return None
-        elif field in ["date", "event_start", "event_end"]:
-            pattern = r'^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$'
+        elif field == "date":
+            pattern = r"^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$"
+            if re.match(pattern, value):
+                return value
+            return None
+        elif field in ["event_start", "event_end"]:
+            pattern = r"^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/(20[2-9][0-9]) ([01][0-9]|2[0-3]):([0-5][0-9])$"
             if re.match(pattern, value):
                 return value
             return None
