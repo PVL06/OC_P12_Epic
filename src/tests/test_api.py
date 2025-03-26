@@ -96,8 +96,8 @@ def contract_data():
 def event_data():
     return {
         "contract_id": 1,
-        "event_start": "25/01/2026",
-        "event_end": "30/01/2026",
+        "event_start": "25/01/2026 15:30",
+        "event_end": "30/01/2026 18:00",
         "support_id": 1,
         "location": "chateau du baron",
         "attendees": 200,

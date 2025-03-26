@@ -37,7 +37,7 @@ def password():
 @click.option("-c", "--create", is_flag=True, help="Create new collaborator")
 @click.option("-u", "--update", is_flag=True, help="Update a collaborator")
 @click.option("-d", "--delete", is_flag=True, help="Delete a collaborator")
-@click.option("-f", "--filter", type=str, help="filter by role")
+@click.option("-f", "--filter", type=str, help="filter by role -> gestion, commercial or support")
 def collab(create, update, delete, filter):
     options_selected = sum([create, update, delete])
 

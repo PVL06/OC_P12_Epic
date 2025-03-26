@@ -29,7 +29,7 @@ FIELDS_PROMPT = {
     "role_id": "Enter collaborator role (1: gestion, 2: commercial, 3: support): ",
     "remaining_to_pay": "Enter remaining to pay: ",
     "date": "Enter date (format: dd/mm/yyy): ",
-    "event_start": "Enter event start date and hour(format: dd/mm/yyyy hh:mm): ",
+    "event_start": "Enter event start date and hour (format: dd/mm/yyyy hh:mm): ",
     "event_end": "Enter event end date and hour(format: dd/mm/yyyy hh:mm): ",
     "status": "Contract signed? (0: no, 1: yes): ",
     "company": "Enter company name: ",

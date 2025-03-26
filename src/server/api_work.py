@@ -1,4 +1,4 @@
-from sqlalchemy import select, false
+from sqlalchemy import select, false, true
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 from starlette.requests import Request
@@ -114,7 +114,10 @@ class ContractAPI:
         for key, value in request.query_params.items():
             match key:
                 case "commercial_id":
-                    stmt = stmt.filter(Collaborator.id == int(value))
+                    stmt = stmt.filter(
+                        Collaborator.id == int(value),
+                        Contract.status == true()
+                    )
                 case "no_signed":
                     stmt = stmt.filter(Contract.status == false())
                 case "debtor":

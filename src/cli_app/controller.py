@@ -208,7 +208,7 @@ class Client(APIBase):
 
     def get_list(self, filter=None):
         route = "/client"
-        # filter for clients without an assigned commercial
+        # optional filter for clients without an assigned commercial
         if filter == "unassigned":
             route += "?unassigned"
 
@@ -338,8 +338,7 @@ class Event(APIBase):
         if filter == "no_support":
             route += "?no_support"
 
-        events = self.request_api(route)
-        if events:
+        if events := self.request_api(route):
             if events.get("events"):
                 select = ViewSelect(
                     events,
@@ -352,21 +351,21 @@ class Event(APIBase):
     @APIBase.user_perm(["commercial"])
     def create_event(self, **kwargs):
         # filter only contract for commercial client
-        contracts = self.request_api("/contract")
-        if contracts.get("contracts"):
-            select = ViewSelect(
-                contracts,
-                msg="Select contact for this event",
-                select=True
-            )
-            if contract_id := select.live_show():
-                input_data = self.view.creation_input("event", kwargs["user_role"])
-                input_data.update({"contract_id": contract_id})
-                response = self.request_api("/event/create", input_data)
-                if response:
-                    self.console.print(response["status"], style="green")
-        else:
-            self.console.print("No contract", style="red")
+        if contracts := self.request_api(f"/contract?commercial_id={kwargs['user_id']}"):
+            if contracts.get("contracts"):
+                select = ViewSelect(
+                    contracts,
+                    msg="Select contact for this event",
+                    select=True
+                )
+                if contract_id := select.live_show():
+                    input_data = self.view.creation_input("event", kwargs["user_role"])
+                    input_data.update({"contract_id": contract_id})
+                    response = self.request_api("/event/create", input_data)
+                    if response:
+                        self.console.print(response["status"], style="green")
+            else:
+                self.console.print("No contract", style="red")
 
     @APIBase.user_perm(["gestion", "support"])
     def update_event(self, **kwargs):
