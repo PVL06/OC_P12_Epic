@@ -73,7 +73,7 @@ def validator(field: str, value) -> bool:
 
     elif field == "password":
         if isinstance(value, str):
-            return len(value) > 3
+            return len(value) >= 6
 
     elif field == "date":
         pattern = r"^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$"

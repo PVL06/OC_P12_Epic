@@ -55,7 +55,7 @@ def commercial_user():
         "name": "collab 1",
         "email": "collab1@gmail.com",
         "phone": "11111111",
-        "password": "1234",
+        "password": "123456",
         "role_id": 2
     }
 
@@ -66,7 +66,7 @@ def support_user():
         "name": "support 1",
         "email": "support1@gmail.com",
         "phone": "222222222",
-        "password": "1234",
+        "password": "123456",
         "role_id": 3
     }
 

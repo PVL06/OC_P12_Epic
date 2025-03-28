@@ -62,41 +62,32 @@ class ViewInput:
         if field in ["attendees", "total_cost", "remaining_to_pay"]:
             if value.isdigit():
                 return int(value)
-            return None
         elif field == "phone":
             if value.isdigit():
                 return value
-            return None
         elif field == "password":
             if len(value) >= 6:
                 return value
-            return None
         elif field == "status":
             if value == "0":
                 return False
             elif value == "1":
                 return True
-            else:
-                return None
         elif field == "role_id":
             if value in ["1", "2", "3"]:
                 return int(value)
-            return None
         elif field == "date":
             pattern = r"^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/\d{4}$"
             if re.match(pattern, value):
                 return value
-            return None
         elif field in ["event_start", "event_end"]:
             pattern = r"^(0[1-9]|[12][0-9]|3[01])/(0[1-9]|1[0-2])/(20[2-9][0-9]) ([01][0-9]|2[0-3]):([0-5][0-9])$"
             if re.match(pattern, value):
                 return value
-            return None
         elif field == "email":
             pattern = r'^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$'
             if re.match(pattern, value):
                 return value
-            return None
         else:
             return value
 
