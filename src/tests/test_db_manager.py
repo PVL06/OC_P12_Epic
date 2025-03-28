@@ -62,6 +62,7 @@ class TestDatabase:
             contract = Contract(
                 client_id=client.id,
                 commercial_id=collaborator.id,
+                event_title="wedding ...",
                 total_cost=1200,
                 remaining_to_pay=500,
                 date=datetime.date(2025, 12, 2),

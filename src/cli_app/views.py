@@ -7,7 +7,7 @@ import msvcrt
 ROLE_FIELDS = {
     "gestion": {
         "collaborator": ["name", "email", "phone", "password", "role_id"],
-        "contract": ["total_cost", "remaining_to_pay", "date", "status"],
+        "contract": ["event_title", "total_cost", "remaining_to_pay", "date", "status"],
         "event": []
     },
     "commercial": {
@@ -27,10 +27,11 @@ FIELDS_PROMPT = {
     "password": "Enter password (6 chars minimum): ",
     "total_cost": "Enter total cost: ",
     "role_id": "Enter collaborator role (1: gestion, 2: commercial, 3: support): ",
+    "event_title": "Enter the name of event for this contract: ",
     "remaining_to_pay": "Enter remaining to pay: ",
     "date": "Enter date (format: dd/mm/yyy): ",
     "event_start": "Enter event start date and hour (format: dd/mm/yyyy hh:mm): ",
-    "event_end": "Enter event end date and hour(format: dd/mm/yyyy hh:mm): ",
+    "event_end": "Enter event end date and hour (format: dd/mm/yyyy hh:mm): ",
     "status": "Contract signed? (0: no, 1: yes): ",
     "company": "Enter company name: ",
     "location": "Enter event location for this event: ",

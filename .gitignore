@@ -1,14 +1,6 @@
 # Python-generated files
 __pycache__/
-
-# Virtual environments
-.venv
-
-# Dotenv
-.env
+.*
 
 # jwt token
 token
-
-# pytest coverage
-.coverage

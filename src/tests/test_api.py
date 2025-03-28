@@ -85,6 +85,7 @@ def client_data():
 def contract_data():
     return {
         "client_id": 1,
+        "event_title": "wedding...",
         "total_cost": 2000,
         "remaining_to_pay": 500,
         "date": "02/01/2025",

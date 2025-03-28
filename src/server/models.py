@@ -67,6 +67,7 @@ class Contract(Base):
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     client_id: Mapped[int] = mapped_column(ForeignKey("client.id"))
     commercial_id: Mapped[Optional[int]] = mapped_column(ForeignKey("collaborator.id"), nullable=True)
+    event_title: Mapped[str] = mapped_column(String(255))
     total_cost: Mapped[float] = mapped_column(Float)
     remaining_to_pay: Mapped[float] = mapped_column(Float)
     date: Mapped[datetime.date] = mapped_column(Date)

@@ -130,6 +130,7 @@ class ContractAPI:
                     "id": contract.id,
                     "client": contract.client.__str__(),
                     "commercial": contract.commercial.__str__(),
+                    "event_title": contract.event_title,
                     "total_cost": contract.total_cost,
                     "remaining_to_pay": contract.remaining_to_pay,
                     "date": contract.date.strftime("%d/%m/%Y"),
@@ -216,6 +217,7 @@ class EventAPI:
                     "id": event.id,
                     "contract": event.contract_id.__str__(),
                     "client": event.client.__str__(),
+                    "title": event.contract.event_title,
                     "event_start": event.event_start.strftime("%d/%m/%Y %H:%M"),
                     "event_end": event.event_end.strftime("%d/%m/%Y %H:%M"),
                     "support": event.support.__str__(),
@@ -284,6 +286,7 @@ class EventAPI:
                 event = session.scalar(stmt)
                 if event:
                     if user_role == "support" and event.support_id != user_id:
+                        capture_message("Outside the CLI application", "warning")
                         return JSONResponse({"error": "Not your event"}, status_code=400)
                     for field, value in cleaned_data.items():
                         setattr(event, field, value)
