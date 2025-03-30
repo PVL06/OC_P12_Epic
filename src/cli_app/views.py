@@ -1,8 +1,14 @@
 import re
+import time
 
 from rich.table import Table
 from rich.console import Console
-import msvcrt
+
+from platform import system
+if system() == 'Windows':
+    from msvcrt import getch
+else:
+    from getch import getch
 
 ROLE_FIELDS = {
     "gestion": {
@@ -95,11 +101,6 @@ class ViewInput:
 
 class ViewSelect:
 
-    UP = b'a'
-    DOWN = b'w'
-    ENTER = b'\r'
-    QUIT = b'q'
-
     def __init__(self, data: dict, msg: str, select=False, update=False) -> None:
         self.title = list(data.keys())[0]
         self.data = data[self.title]
@@ -167,21 +168,21 @@ class ViewSelect:
                 self.console.print(self._create_item_table())
             else:
                 self.console.print(self._create_table())
-            key = msvcrt.getch()
+            key = getch()
             match key:
-                case self.UP:
+                case b"a" | "a":  # keyboard UP
                     if self.pointer == 0:
                         self.pointer = data_len
                     else:
                         self.pointer -= 1
 
-                case self.DOWN:
+                case b"w" | "w":  # keyboard DOWN
                     if self.pointer == data_len:
                         self.pointer = 0
                     else:
                         self.pointer += 1
 
-                case self.ENTER:
+                case b"\r" | "\n":  #  keyboard Enter
                     if self.select:
                         if self.update:
                             return self.data[self.pointer]
@@ -189,7 +190,7 @@ class ViewSelect:
                             item_id = self.data[self.pointer].get("id")
                             return int(item_id)
 
-                case self.QUIT:
+                case b"q" | "q":  # keyboard q quit
                     return None
                 case _:
                     pass
