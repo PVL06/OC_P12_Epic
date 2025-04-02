@@ -1,12 +1,18 @@
 ## :hash:Présentation du projet:
+Ce projet s’inscrit dans le cadre du parcours "Développeur d’application Python" sur OpenClassrooms.
+L'objectif est de développer un CRM (Customer Relationship Management) pour une entreprise spécialisée dans le conseil et la gestion événementielle.  
+
+Ce CRM sera accessible à l’ensemble des collaborateurs et permettra de stocker et gérer de manière sécurisée les données relatives aux collaborateurs, clients, contrats et événements. Son but est de faciliter la gestion et d’optimiser la communication entre les différents pôles de l'entreprise.  
+
+L’organisation de la société repose sur trois départements : gestion, commercial et support.
+Toutes les données seront accessibles en lecture seule par l’ensemble des collaborateurs. Cependant, selon leur rôle, des permissions spécifiques seront attribuées pour la création, la modification et la suppression des informations.
 
 <hr>
 
 ## :triangular_ruler:Architecture
 
 **1. Architecture générale**  
-Le projet est composé de deux applications : une API hébergée sur un serveur et une application client installée sur les postes des collaborateurs.
-<br>
+Le projet est composé de deux applications : une API hébergée sur un serveur et une application client installée sur les postes des collaborateurs.  
 ![alt text](archi.png "architecture")
 <br>
 - L'API (backend)  
@@ -16,7 +22,6 @@ Plusieurs middlewares ont été implémentés pour :
 :small_blue_diamond:La gestion des autorisations via des tokens JWT à chaque requête.  
 :small_blue_diamond:La création d'une session pour la base de données.  
 :small_blue_diamond:L'intégration de Sentry pour la gestion des erreurs et la surveillance.  
-
 Les permissions et les entrées utilisateur sont vérifiées avant chaque interaction avec la base de données.  
 Les mots de passe sont stockés de manière sécurisée grâce au hachage et au salage avec la bibliothèque argon2.   
 Le fichier init_db.py permet d'initialiser la base de données en créant les tables et les rôles prédéfinis. Les tests de l'API sont effectués sur une base de données distincte afin d'éviter la pollution des données de production. 
@@ -28,6 +33,7 @@ Les actions et les entrées utilisateur sont également validées (permissions, 
 **2. Architecture de la base de données**  
 Le projet utilise PostgreSQL comme base de données. Ci-dessous, le schéma des différentes tables et de leurs relations:  
 ![alt text](bdd.png "schema de la base de donnée")
+
 <hr>
 
 ## :hammer:Installation
@@ -82,6 +88,7 @@ uv run server_epic.py
 ```
 uv run cli_epic.py --help
 ```
+
 <hr>  
 
 ## :book:CLI Utilisation
