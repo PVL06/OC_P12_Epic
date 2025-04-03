@@ -1,4 +1,4 @@
-from sqlalchemy import select, false, true
+from sqlalchemy import select, false, true, update
 from starlette.responses import JSONResponse
 from starlette.routing import Route
 from starlette.requests import Request
@@ -80,16 +80,22 @@ class ClientAPI:
             stmt = select(Client).where(Client.id == request.path_params["id"])
             with request.state.db.begin() as session:
                 client = session.scalar(stmt)
-                commecial_condition = all([role == "commercial", client.commercial_id == user_id])
-                support_condition = all([role == "gestion" and client.commercial_id is None])
-                if commecial_condition or support_condition:
+                commercial_condition = all([role == "commercial", client.commercial_id == user_id])
+                gestion_condition = all([role == "gestion" and client.commercial_id is None])
+                if commercial_condition or gestion_condition:
                     for field, value in cleaned_data.items():
                         setattr(client, field, value)
+                        if field == "commercial_id":
+                            session.execute(
+                                update(Contract)
+                                .where(Contract.client_id == client.id)
+                                .values(commercial_id=value)
+                            )
                     return JSONResponse({"status": "Client updated"})
                 else:
                     capture_message("Outside the CLI application", "warning")
                     return JSONResponse(
-                        {"error": "Not your client" if commecial_condition else "Commercial already assigned"},
+                        {"error": "Not your client" if commercial_condition else "Commercial already assigned"},
                         status_code=400
                     )
         else:
@@ -129,7 +135,7 @@ class ContractAPI:
                 {
                     "id": contract.id,
                     "client": contract.client.__str__(),
-                    "commercial": contract.commercial.__str__(),
+                    "commercial": contract.client.commercial.__str__(),
                     "event_title": contract.event_title,
                     "total_cost": contract.total_cost,
                     "remaining_to_pay": contract.remaining_to_pay,
